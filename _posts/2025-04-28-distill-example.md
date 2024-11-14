@@ -1,31 +1,29 @@
 ---
 layout: distill
-title: Sample Blog Post
-description: Your blog post's abstract.
-  Please add your abstract or summary here and not in the main body of your text. 
-  Do not include math/latex or hyperlinks.
-date: 2025-04-28
+title: Diffusion Models Meet Flow Matching
+description: Flow matching and diffusion models have become prominent frameworks in generative modeling, with flow matching drawing growing attention recently. Despite being seemingly similar, there is general confusion in the community about their exact connection. In this blog post, we systematically analyze and connect the two frameworks, covering every facet in their training and sampling procedures. With all investigation we verify a claim affirmatively, i.e., diffusion model and Gaussian flow matching are essentially the same. Therefore, it does not matter which framework one leverages when developing new techniques. 
+date: 2025-11-12
 future: true
 htmlwidgets: true
 hidden: false
 
 # Anonymize when submitting
-# authors:
-#   - name: Anonymous
-
 authors:
-  - name: Albert Einstein
-    url: "https://en.wikipedia.org/wiki/Albert_Einstein"
-    affiliations:
-      name: IAS, Princeton
-  - name: Boris Podolsky
-    url: "https://en.wikipedia.org/wiki/Boris_Podolsky"
-    affiliations:
-      name: IAS, Princeton
-  - name: Nathan Rosen
-    url: "https://en.wikipedia.org/wiki/Nathan_Rosen"
-    affiliations:
-      name: IAS, Princeton
+  - name: Anonymous
+
+# authors:
+#   - name: Albert Einstein
+#     url: "https://en.wikipedia.org/wiki/Albert_Einstein"
+#     affiliations:
+#       name: IAS, Princeton
+#   - name: Boris Podolsky
+#     url: "https://en.wikipedia.org/wiki/Boris_Podolsky"
+#     affiliations:
+#       name: IAS, Princeton
+#   - name: Nathan Rosen
+#     url: "https://en.wikipedia.org/wiki/Nathan_Rosen"
+#     affiliations:
+#       name: IAS, Princeton
 
 # must be the exact same name as your blogpost
 bibliography: 2025-04-28-distill-example.bib  
@@ -67,7 +65,36 @@ _styles: >
   }
 ---
 
-Note: please use the table of contents as defined in the front matter rather than the traditional markdown styling.
+{% include figure.html path="assets/img/2025-04-28-distill-example/twotrees.jpg" class="img-fluid" %}
+
+
+Diffusion models and flow matching have emerged as powerful frameworks in generative modeling. In particular, flow matching has gained inreasing popularity recently, due to its simplicity in formulation and "straightness" in the sampling trajectories. A common question one hears nowadays is: 
+
+
+<p align="center"><i>"Does this diffusion technique also work with flow matching?"</i></p>
+
+Clearly, there is confusion in the field. After all, a diffusion model and a Gaussian flow matching are essentially equavalent. Therefore, the answer is yes, trivially.
+
+In this blog post, we will walk through the frameworks of diffusion model and flow matching systematically, providing evidence of the above claim. By *flow matching* in the context of this blog post, we mainly refer to Gaussian flow matching with the optimal transport flow path, the dominant framwork used in practice. Other closely related frameworks include rectified flow and stochastic interpolant. 
+
+
+## Overview of two model classes
+
+A diffusion process gradually destroy an observed data $$ \bf{x} $$ over time $$t$$, by mixing the data with Gaussian noise:
+
+$$
+\bf{z}_t = \alpha_t \bf{x}_t + \sigma_t \bf{\epsilon}, \; \bf{\epsilon} \sim \mathcal{N}(0, \bf{I}).
+$$
+
+A useful notation is the log signal-to-noise ratio $\lambda = \log(\alpha_t^2 / \sigma_t^2)$, which is close to 1 at $$t = 0$$ and close to 0 at $$t = 1$$.
+
+
+## Training, Loss and Model Output
+
+## Sampling and Straightness Misnomer
+
+<p align="center"><i>"Flow matching paths are straight, whereas diffusion paths are curved."</i></p>
+
 
 ## Equations
 
