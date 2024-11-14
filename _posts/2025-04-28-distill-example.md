@@ -75,21 +75,22 @@ Diffusion models and flow matching have emerged as powerful frameworks in genera
 
 Clearly, there is confusion in the field. After all, a diffusion model and a Gaussian flow matching are essentially equavalent. Therefore, the answer is yes, trivially.
 
-In this blog post, we will walk through the frameworks of diffusion model and flow matching systematically, providing evidence of the above claim. By *flow matching* in the context of this blog post, we mainly refer to Gaussian flow matching with the optimal transport flow path, the dominant framwork used in practice. Other closely related frameworks include rectified flow and stochastic interpolant. 
+In the following sessions, we will walk through the frameworks of diffusion model and flow matching systematically, providing evidence of the above claim. By *flow matching* in the context of this blog post, we mainly refer to Gaussian flow matching with the optimal transport flow path, the dominant framwork used in practice. Other closely related frameworks include rectified flow and stochastic interpolant. 
 
 
-## Overview of two model classes
+## Training, Loss and Model Output
 
 A diffusion process gradually destroy an observed data $$ \bf{x} $$ over time $$t$$, by mixing the data with Gaussian noise:
 
 $$
-\bf{z}_t = \alpha_t \bf{x}_t + \sigma_t \bf{\epsilon}, \; \bf{\epsilon} \sim \mathcal{N}(0, \bf{I}).
+\bf{z}_t = \alpha_t \bf{x}_t + \sigma_t \bf{\epsilon}, \;\text{where} \; \bf{\epsilon} \sim \mathcal{N}(0, \bf{I}).
 $$
 
-A useful notation is the log signal-to-noise ratio $\lambda = \log(\alpha_t^2 / \sigma_t^2)$, which is close to 1 at $$t = 0$$ and close to 0 at $$t = 1$$.
+A useful notation is the log signal-to-noise ratio $\lambda_t = \log(\alpha_t^2 / \sigma_t^2)$, which by design is close to 1 at $$t = 0$$ (i.e., nearly clean data) and close to 0 at $$t = 1$$ (i.e., nearly Gaussian noise).
+
+The forward process of flow matching 
 
 
-## Training, Loss and Model Output
 
 ## Sampling and Straightness Misnomer
 
