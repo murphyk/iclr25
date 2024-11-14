@@ -1,7 +1,7 @@
 ---
 layout: distill
 title: Diffusion Models Meet Flow Matching
-description: Flow matching and diffusion models have become prominent frameworks in generative modeling, with flow matching drawing growing attention recently. Despite being seemingly similar, there is general confusion in the community about their exact connection. In this blog post, we systematically analyze and connect the two frameworks, covering every facet in their training and sampling procedures. With all investigation we verify a claim affirmatively, i.e., diffusion model and Gaussian flow matching are essentially the same. Therefore, it does not matter which framework one leverages when developing new techniques. 
+description: Flow matching and diffusion models have become prominent frameworks in generative modeling, with flow matching drawing growing attention recently. Despite being seemingly similar, there is general confusion in the community about their exact connection. In this blog post, we systematically analyze and connect the two frameworks, covering every facet in their training and sampling procedures. With all investigation we verify a claim affirmatively, i.e., diffusion model and Gaussian flow matching are essentially the same. One should feel comfortable using the two frameworks interchangeably. 
 date: 2025-11-12
 future: true
 htmlwidgets: true
