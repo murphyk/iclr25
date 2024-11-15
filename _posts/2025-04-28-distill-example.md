@@ -137,6 +137,71 @@ Weighting function is an important design choice for the training loss.
 
 <p align="center"><i>"Flow matching paths are straight, whereas diffusion paths are curved."</i></p>
 
+## From Diffusion Models to Flow Matching and back
+
+In this section, we show the equivalence between diffusion models and flow matching approaches from a stochastic process point of view. Note that it is possible to show this equivalence using other apporaches [CITE]
+
+### Flow Matching
+
+In Flow Matching (and stochastic interpolant), we start by defining an interpolation. In order to be consistent with diffusion models notation, we will denote $\mathbf{X}_0 \sim \pi$, where $\pi$ is the data distribution and $\mathbf{X}_1 \sim \mathrm{N}(0, \mathrm{Id})$. 
+
+We start by defining the interpolation
+
+$$
+\mathbf{X}_t = \alpha_t \mathbf{X}_0 + \sigma_t \mathbf{X}_1 
+$$
+
+We would like to flow from $\mathbf{X}_1$ to $\mathbf{X}_0$.
+The associated ODE is given by 
+
+$$
+\mathrm{d} \mathbf{X}_t = \{ \dot{\alpha}_t \mathbf{X}_0 + \dot{\sigma}_t \mathbf{X}_1 \} \mathrm{d} t 
+$$
+
+Since, we want to flow from $1 \to 0$, we define $\mathbf{Y}_t = \mathbf{X}_{1-t}$ and we get that 
+
+$$
+\mathrm{d} \mathbf{Y}_t = - \{ \dot{\alpha}_{1-t} \mathbf{Y}_1 + \dot{\sigma}_{1-t} \mathbf{Y}_0 \} \mathrm{d} t 
+$$
+
+Of course, at inference we do not have access to $\mathbf{Y}_1$, i.e., the datapoint and instead replace it by our best guess at time $t$. Hence, we define 
+
+$$
+\mathrm{d} \mathbf{Y}_t = - \{ \mathbb{E}[\dot{\alpha}_{1-t} \mathbf{Y}_1 + \dot{\sigma}_{1-t} \mathbf{Y}_0 | \mathbf{Y}_t] \} \mathrm{d} t 
+$$
+
+Give theorem to say why this is true?
+
+Usually, the quantity $\mathbb{E}[\dot{\alpha}_{t} \mathbf{X}_0 + \dot{\sigma}_{t} \mathbf{X}_1 | \mathbf{X}_t = x] = v_t(x)$ is called the velocity flow matching and can be learned via regression loss. It corresponds to the loss ... 
+
+There is exists a one-to-one mapping between the flow matching velocity and the score function given by 
+
+$$
+v_t(x) = \tfrac{\dot{\alpha}_t}{\alpha_t} x - \sigma_t ( \dot{\sigma}_t - \tfrac{\dot{\alpha}_t}{\alpha_t} \sigma_t) \nabla \log p_t(x)
+$$
+
+Using the Fokker-Planck trick (maybe have it in the appendix, add Amsterdam (TM) remark that this corresponds to say that stochastic = deterministic + renoising) we can get a stochastic generative process
+
+$$
+\mathrm{d} \mathbf{Y}_t = \{ -v_{1-t}(\mathbf{Y}_t) +\tfrac{\varepsilon_{1-t}^2}{2} \nabla \log p_{1-t}(\mahtbf{Y}_t) \} \mathrm{d} t + \varepsilon_{1-t}  \mathrm{d} \mathbf{B}_t ,
+$$
+
+where $(\mathbf{B}_t)_{t \in [0,1]}$ is a $d$-dimensional Brownian motion (maybe here give a natural interpretation of the Brownian motion and SDE, using the discretisation, talk about exponential integrators?)
+
+Hence in flow matching we have three free parameters:
+* $\alpha_t$ -- smol description
+* $\sigma_t$ -- smol description
+* $\varepsilon_t$ -- smol description
+
+### Diffusion models
+
+In diffusion models we usually define 
+
+### How to relate these two models?
+
+Interpolant defines a forward process
+Forward process defines an interpolant
+By careful identification we can identify the two processes
 
 ## Equations
 
