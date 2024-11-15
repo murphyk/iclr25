@@ -71,26 +71,67 @@ _styles: >
 Diffusion models and flow matching have emerged as powerful frameworks in generative modeling. In particular, flow matching has gained inreasing popularity recently, due to its simplicity in formulation and "straightness" in the sampling trajectories. A common question one hears nowadays is: 
 
 
-<p align="center"><i>"Does this diffusion technique also work with flow matching?"</i></p>
+<!-- > Does this diffusion technique also work with Gaussian flow matching? -->
+<p align="center"><i>"Does this diffusion technique also work with Gaussian flow matching?"</i></p>
 
 Clearly, there is confusion in the field. After all, a diffusion model and a Gaussian flow matching are essentially equavalent. Therefore, the answer is yes, trivially.
 
-In the following sessions, we will walk through the frameworks of diffusion model and flow matching systematically, providing evidence of the above claim. By *flow matching* in the context of this blog post, we mainly refer to Gaussian flow matching with the optimal transport flow path, the dominant framwork used in practice. Other closely related frameworks include rectified flow and stochastic interpolant. 
+In this blog post, we will walk through the frameworks of diffusion model and flow matching systematically from the practical perspective. We mainly focus on Gaussian flow matching with the optimal transport flow path <d-cite key="lipman2022flow"></d-cite>, the dominant version of flow matching adopted by the field of media generation. Other closely related frameworks include rectified flow <d-cite key="liu2022flow"></d-cite> and stochastic interpolant <d-cite key="albergo2023stochastic"></d-cite>. Our purpose is not to downweigh the importance of either framework. In fact, it is interesting to see that two frameworks derived from distinct theoretical perspectives lead to the same algorithm in practice. Rather, we hope to make practitioner feel comfortable to use the two frameworks interchangeably, understand the actual degrees of freedom we have when tuning the algorithm (no matter how we name it), and what design choices actually do not matter.
 
 
-## Training, Loss and Model Output
+## Training 
 
-A diffusion process gradually destroy an observed data $$ \bf{x} $$ over time $$t$$, by mixing the data with Gaussian noise:
+We will start by introducing a general training framework, and then discuss how flow matching and diffusion models fit in this framework. A diffusion process gradually destroys an observed data $$ \bf{x} $$ over time $$t$$, by mixing the data with Gaussian noise:
 
 $$
-\bf{z}_t = \alpha_t \bf{x}_t + \sigma_t \bf{\epsilon}, \;\text{where} \; \bf{\epsilon} \sim \mathcal{N}(0, \bf{I}).
+{\bf z}_t = \alpha_t {\bf x} + \sigma_t {\boldsymbol \epsilon}, \;\mathrm{where} \; {\boldsymbol \epsilon} \sim \mathcal{N}(0, {\bf I}).
 $$
 
-A useful notation is the log signal-to-noise ratio $\lambda_t = \log(\alpha_t^2 / \sigma_t^2)$, which by design is close to 1 at $$t = 0$$ (i.e., nearly clean data) and close to 0 at $$t = 1$$ (i.e., nearly Gaussian noise).
+$$\alpha_t$$ and $$\sigma_t$$ define the **noise schedule**. A useful notation is the log signal-to-noise ratio $$\lambda_t = \log(\alpha_t^2 / \sigma_t^2)$$, which monotonically decreases as $$t$$ increases (i.e., goes from clean data to Gaussian noise). 
+<!-- For Gaussian flow matching, $$\alpha_t = t$$ and $$\sigma_t = 1-t$$. -->
 
-The forward process of flow matching 
+For training, a neural network is estimated to predict $$\hat{\boldsymbol \epsilon} = \hat{\boldsymbol \epsilon}({\bf z}_t; t)$$ that effectively estimates $${\mathbb E} [{\boldsymbol \epsilon} \vert {\bf z}_t]$$, the expected noise added to the data given the noisy sample. Other **model outputs** have been proposed in the literature which are linear combinations of $$\hat{\boldsymbol \epsilon}$$ and $${\bf z}_t$$, and $$\hat{\boldsymbol \epsilon}$$ can be derived from the model output given $${\bf z}_t$$. Learning the model is done by minimizing a weighted mean squared error loss <d-cite key="kingma2024understanding,hoogeboom2024simpler"></d-cite>:
+
+$$
+\mathcal{L}(\mathbf{x}) = \mathbb{E}_{t \sim \mathcal{U}(0,1), \boldsymbol{\epsilon} \sim \mathcal{N}(0, \mathbf{I})} \left[ \textcolor{green}{w(\lambda_t)} \cdot \frac{d\lambda}{dt} \cdot \|\hat{\boldsymbol{\epsilon}} - \boldsymbol{\epsilon}\|_2^2 \right],
+$$
+
+where $$\textcolor{green}{w(\lambda_t)}$$ is the **weighting function**, balancing the importance of the loss at different noise levels. So far there are three design choices that are seemingly important: noise schedule, model output, and weighting function, that we will elaborate below.
 
 
+
+
+### Noise schedule
+The noise schedule of flow matching is in a very simple form: $$\alpha_t = t, \sigma_t = 1 - t$$. Various noise schedules have been proposed in the diffusion literature, such as variance-preserving schedules ($$\alpha_t^2 + \sigma_t^2 = 1$$), variance-exploding schedules ($$\alpha_t=1$$), and other options in between. A few remarks about noise schedule:
+1. All different noise schedules can be normalized as a variance-preserving schedule, with a linear scaling of $${\bf z}_t$$ and an unscaling at the model input. The key defining property of a noise schedule is the log signal-to-noise ratio $$\lambda_t$$.
+2. The training loss is *invariant* to the training noise schedule, since the loss fuction can be rewritten as $$\mathcal{L}(\mathbf{x}) = \int_{\lambda_{\min}}^{\lambda_{\max}} w(\lambda) \mathbb{E}_{\boldsymbol{\epsilon} \sim \mathcal{N}(0, \mathbf{I})} \left[ \|\hat{\boldsymbol{\epsilon}}_\theta - \boldsymbol{\epsilon}\|_2^2 \right] \, d\lambda$$, which is irrelevant to $$\lambda_t$$. However, $$\lambda_t$$ might still affect the variance of the Monte Carlo estimator of the training loss. A few heuristics have been proposed in the literature to automatically adjust the noise schedules over the training course. See [Sander's blog post](https://sander.ai/2024/06/14/noise-schedules.html#adaptive) for a nice summary.
+3. As we will see in the next section, the testing noise schedule does impact the sample quality. However, one can choose completely different noise schedules for training and sampling, based on distinct heuristics: For training, it is desirable to have a noise schedule that minimizes the variance of the Monte Calor estimator, whereas for sampling the noise schedule is more related to the discretization error of the ODE / SDE sampling trajectories and the model curvature.
+
+
+
+### Model output
+Below we summarize several  model outputs proposed in the literature, include a few from diffusion models and the one of flow matching.
+
+
+| Model Output  | Formulation   | MSE on Model Output  |
+| :------------- |:-------------:|-----:|
+| $${\boldsymbol \epsilon}$$-prediction      |$$\hat{\boldsymbol \epsilon} $$ | $$\lVert\hat{\boldsymbol{\epsilon}} - \boldsymbol{\epsilon}\rVert_2^2 $$ |
+| $${\bf x}$$-prediction      | $$\hat{\bf x} = \frac{1}{\alpha_t} {\bf z}_t - \frac{\sigma_t}{\alpha_t} \hat{\boldsymbol \epsilon}$$      | $$ \lVert\hat{\bf x} - {\bf x}\rVert_2^2 = e^{- \lambda} \lVert\hat{\boldsymbol{\epsilon}} - \boldsymbol{\epsilon}\rVert_2^2 $$ |
+| $${\bf v}$$-prediction | $$\hat{\bf v} = \alpha_t \hat{\boldsymbol{\epsilon}} - \sigma_t \hat{\bf x} $$      |    $$ \lVert\hat{\bf v} - {\bf v}\rVert_2^2 = \alpha_t^2(e^{-\lambda} + 1)^2 \lVert\hat{\boldsymbol{\epsilon}} - \boldsymbol{\epsilon}\rVert_2^2 $$ |
+| $${\bf u}$$ - flow matching vector field | $$\hat{\bf u} = \hat{\bf x} - \hat{\boldsymbol{\epsilon}} $$      |    $$ \lVert\hat{\bf u} - {\bf u}\rVert_2^2 = (1 + e^{-\lambda / 2})^2 \lVert\hat{\boldsymbol{\epsilon}} - \boldsymbol{\epsilon}\rVert_2^2 $$ |
+
+
+
+
+### Weighting function
+Weighting function is an important design choice for the training loss. 
+
+
+<div style="background-color: #f9f9f9; border-left: 6px solid #4CAF50; padding: 10px; margin: 10px 0;">
+
+**Note:** This is a remark section. You can customize the colors, text, and padding to suit your webpage's style.
+
+</div>
 
 ## Sampling and Straightness Misnomer
 
@@ -109,6 +150,8 @@ Here is an example:
 $$
 \left( \sum_{k=1}^n a_k b_k \right)^2 \leq \left( \sum_{k=1}^n a_k^2 \right) \left( \sum_{k=1}^n b_k^2 \right)
 $$
+
+
 
 Note that MathJax 3 is [a major re-write of MathJax](https://docs.mathjax.org/en/latest/upgrading/whats-new-3.0.html) 
 that brought a significant improvement to the loading and rendering speed, which is now 
