@@ -81,6 +81,23 @@ In this blog post, we will walk through the frameworks of diffusion model and fl
 
 ## Overview
 
+We start by recalling the two frameworks (diffusion models and flow matching).
+We highlight the free parameters in each framework and how they relate to each other. 
+In particular, there exists explicit mappings to define a diffusion model from a flow matching model and vice-versa. This overview does not dive into the training of such models, i.e., we assume that all the learnable quantities have been adequatly optimized. We also do not discuss the different sampling techniques used at inference. Both the training and the inference will be discussed in further sections. 
+
+### Notation (to remove) 
+
+$\mathbf{X}_t$
+$\pi$
+$\mathcal{N}(0, \mathrm{Id})$
+my nitpick on the backward
+$\mathbf{Y}_t$ for the backward process
+$\alpha_t, \sigma_t, \varepsilon_t$ for FM
+$f_t, g_t, \eta_t$ for DM
+$A_t, S_t$ for the obtained interpolation from DM
+
+We should pick a name (Flow Matching) and stick with it (but mention in the intro stochastici nterpolantetc)
+
 ### Diffusion models
 
 A diffusion process gradually destroys an observed data $$ \bf{x} $$ over time $$t$$, by mixing the data with Gaussian noise:
@@ -184,31 +201,31 @@ In this section, we show the equivalence between diffusion models and flow match
 
 ### Flow Matching
 
-In Flow Matching (and stochastic interpolant), we start by defining an interpolation. In order to be consistent with diffusion models notation, we will denote $\mathbf{X}_0 \sim \pi$, where $\pi$ is the data distribution and $\mathbf{X}_1 \sim \mathrm{N}(0, \mathrm{Id})$. 
+In Flow Matching (and stochastic interpolant), we start by defining an interpolation. In order to be consistent with diffusion models notation, we will denote $\mathbf{X}_0 \sim \pi$, where $\pi$ is the data distribution and $\mathbf{Z}_1 \sim \mathcal{N}(0, \mathrm{Id})$. 
 
 We start by defining the interpolation
 
 $$
-\mathbf{X}_t = \alpha_t \mathbf{X}_0 + \sigma_t \mathbf{X}_1 
+\mathbf{X}_t = \alpha_t \mathbf{X}_0 + \sigma_t \mathbf{Z} . 
 $$
 
-We would like to flow from $\mathbf{X}_1$ to $\mathbf{X}_0$.
+We would like to flow from $\mathbf{Z}$ to $\mathbf{X}_0$.
 The associated ODE is given by 
 
 $$
-\mathrm{d} \mathbf{X}_t = \{ \dot{\alpha}_t \mathbf{X}_0 + \dot{\sigma}_t \mathbf{X}_1 \} \mathrm{d} t 
+\mathrm{d} \mathbf{X}_t = \left{ \dot{\alpha}_t \mathbf{X}_0 + \dot{\sigma}_t \mathbf{Z} \right} \mathrm{d} t .
 $$
 
-Since, we want to flow from $1 \to 0$, we define $\mathbf{Y}_t = \mathbf{X}_{1-t}$ and we get that 
+Since, we want to flow from the noise to the data, we define $\mathbf{Y}_t = \mathbf{X}_{1-t}$ and we get that 
 
 $$
-\mathrm{d} \mathbf{Y}_t = - \{ \dot{\alpha}_{1-t} \mathbf{Y}_1 + \dot{\sigma}_{1-t} \mathbf{Y}_0 \} \mathrm{d} t 
+\mathrm{d} \mathbf{Y}_t = - \left{ \dot{\alpha}_{1-t} \mathbf{Y}_1 + \dot{\sigma}_{1-t} \mathbf{Y}_0 \right} \mathrm{d} t .
 $$
 
-Of course, at inference we do not have access to $\mathbf{Y}_1$, i.e., the datapoint and instead replace it by our best guess at time $t$. Hence, we define 
+Of course, at inference time we do not have access to $\mathbf{Y}_1$, i.e., we do not have access to the original datapoint $\mathbf{X}_0$. Instead, we replace it by our best guess at time $t$. This is equivalent to consider the conditional expectation of the velocity given $\mathbf{Y}_t$. Hence, we define 
 
 $$
-\mathrm{d} \mathbf{Y}_t = - \{ \mathbb{E}[\dot{\alpha}_{1-t} \mathbf{Y}_1 + \dot{\sigma}_{1-t} \mathbf{Y}_0 | \mathbf{Y}_t] \} \mathrm{d} t 
+\mathrm{d} \mathbf{Y}_t = - \{ \mathbb{E}[\dot{\alpha}_{1-t} \mathbf{Y}_1 + \dot{\sigma}_{1-t} \mathbf{Y}_0 | \mathbf{Y}_t] \} \mathrm{d} t  . 
 $$
 
 Give theorem to say why this is true?
