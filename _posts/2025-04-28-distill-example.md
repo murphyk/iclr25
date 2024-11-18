@@ -195,6 +195,14 @@ Weighting function balances the importance of different noise levels during trai
 
 <p align="center"><i>"Flow matching paths are straight, whereas diffusion paths are curved."</i></p>
 
+{% raw %}<div class="l-page">
+  <iframe src="{{ 'assets/html/peak_vp.html' | relative_url }}" frameborder='0' scrolling='no' height="600px" width="100%"></iframe>
+</div>{% endraw %}
+
+{% raw %}<div class="l-page">
+  <iframe src="{{ 'assets/html/peak_flow.html' | relative_url }}" frameborder='0' scrolling='no' height="600px" width="100%"></iframe>
+</div>{% endraw %}
+
 ## From Diffusion Models to Flow Matching and back
 
 In this section, we show the equivalence between diffusion models and flow matching approaches from a stochastic process point of view. Note that it is possible to show this equivalence using other apporaches [CITE]
