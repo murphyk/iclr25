@@ -195,13 +195,93 @@ Hence in flow matching we have three free parameters:
 
 ### Diffusion models
 
-In diffusion models we usually define 
+In diffusion models we usually define a forward process that we try to reverse.
+
+$$
+\mathrm{d} \mathbf{X}_t = f_t \mathbf{X}_t \mathrm{d} t + g_t \mathrm{d} \mathbf{B}_t .
+$$
+
+Associated with this SDE is the following integral representation
+
+$$
+\mathbf{X}_t = A_t \mathbf{X}_0 + S_t Z , \qquad Z \sim \mathrm{N}(0, \mathrm{Id}) . 
+$$
+
+where $A_t$ and $S_t$ are explicit functions of $f_t$ and $g_t$ and can be obtained as
+
+$$
+A_t = \exp[\int_0^t f_s \mathrm{d}s] , \qquad S_t = \int_0^t g_s^2 \exp[-2\int_0^s f_u \mathrm{d}u] \mathrm{d} s . 
+$$
+
+The backward model associated with the forward SDE is given by 
+
+$$
+\mathrm{d} Y_t = \{ -f_{1-t} \mathbf{Y}_t + g_{1-t}^2 \nabla \log p_{1-t}(\mathbf{Y}_t) \} \mathrm{d} t + g_{1-t} \mathrm{d} \mathbf{B}_t .
+$$
+
+Using Tweedie's formula we get that 
+
+$$
+\nabla \log p_t(x) = \mathbb{E}[(A_t \mathbf{X}_0 - \mathbf{X}_t) / S_t | \mathbf{X}_t = x] .
+$$
+
+Similarly to the flow matching setting, we can play with the level of stochasticity.
+We introduce an additional parameter $\eta_t$ and we get a modified version of ... 
+
+$$
+\mathrm{d} Y_t = \{ -f_{1-t} \mathbf{Y}_t + (1 + \eta_{1-t})\tfrac{g_{1-t}^2}{2} \nabla \log p_{1-t}(\mathbf{Y}_t) \} \mathrm{d} t + \eta_{1-t} g_{1-t} \mathrm{d} \mathbf{B}_t .
+$$
+
+Hence in flow matching we have three free parameters:
+* $f_t$ -- smol description
+* $g_t$ -- smol description
+* $\eta_t$ -- smol description
 
 ### How to relate these two models?
 
-Interpolant defines a forward process
-Forward process defines an interpolant
-By careful identification we can identify the two processes
+As, we have seen flow matching depends on three parameters $\alpha_t$, $\sigma_t$, $\varepsilon_t$ and diffusion models depend on three parameters as well $f_t$, $g_t$, $\eta_t$. In this section, we are going to show that one can define a one-to-one mapping between those quantities so that flow matching and diffusion models define exactly the same model. 
+
+First, we notice that diffusion models define an interpolant using ...
+
+Hence, if we want to make the two models identical we need to set $A_t = \alpha_t$ and $S_t = \sigma_t$. 
+This will give us a relation between $f_t, g_t$ and $\alpha_t, \sigma_t$. 
+
+We get the following relationship
+
+$$
+f_t = \partial_t \log(\alpha_t) , \qquad g_t = (2 \alpha_t \sigma_t \partial_t (\sigma_t / \alpha_t))^{1/2} .
+$$
+
+At this stage, we have found a way to define a forward SDE in a diffusion model framework that yields an interpolant defined by flow matching using ... Similarly, using ... we can define an interpolant in the flow matching framework given a forward SDE given by a diffusion model.
+
+So far, we have shown that by defining a relationship between $f_t, g_t$ and $\alpha_t, \sigma_t$ we can define the same interpolant and forward noising process in both the flow matching and the diffusion model frameworks. 
+
+However, one question remains, do the generative SDEs coincides? Recall that the general generative SDE is given by ... in the flow matching framework and by ... in the diffusion model framework. 
+
+Let's have a look at the coefficients in front of the Brownian motion in both cases. In the flow matching setting, we have $\varepsilon_{1-t}$ and in the diffusion model setting we have $\eta_{1-t} g_{1-t}$. This suggests to set 
+
+$$
+\varepsilon_t = \eta_t g_t . 
+$$
+
+Sure, this makes the coefficients in front of the  Brownian motion equal but what about the drift terms?
+Well, it turns out that with the relationships ... and ... they are also equal and therefore the dynamics are identical!
+
+This is the content of the following theorem
+
+...
+
+To summarize, given $\alpha_t$, $\sigma_t$ and $\varepsilon_t$ defining a flow matching framework, we can get an equivalent diffusion model framework by defining 
+
+$$
+f_t = \partial_t \log(\alpha_t) , \qquad g_t = 2 \alpha_t sgima_t \partial_t (\sigma_t / \alpha_t) , \qquad \eta_t = \varepsilon_t / [2 \alpha_t sgima_t \partial_t (\sigma_t / \alpha_t)]
+$$
+
+Similarly, given $f_t$, $g_t$ and $\eta_t$ defining a diffusion model framework, we can get an equivalent flow matching framework by defining 
+
+$$
+\alpha_t = \exp[\int_0^t f_s \mathrm{d}s] , \qquad \sigma_t = (\int_0^t g_s^2 \exp[-2\int_0^s f_u \mathrm{d}u] \mathrm{d} s)^{1/2} , \qquad \varepsilon_t = \eta_t g_t . 
+$$
 
 ## Equations
 
