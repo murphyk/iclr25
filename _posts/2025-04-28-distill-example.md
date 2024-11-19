@@ -81,104 +81,105 @@ In this blog post, we will walk through the frameworks of diffusion model and fl
 
 ## Overview
 
-We start by recalling the two frameworks (diffusion models and flow matching).
-We highlight the free parameters in each framework and how they relate to each other. 
-In particular, there exists explicit mappings to define a diffusion model from a flow matching model and vice-versa. This overview does not dive into the training of such models, i.e., we assume that all the learnable quantities have been adequatly optimized. We also do not discuss the different sampling techniques used at inference. Both the training and the inference will be discussed in further sections. 
+We start by recalling the two frameworks (diffusion models and flow matching) and compare them from a high level. 
+<!-- We highlight the free parameters in each framework and how they relate to each other. 
+In particular, there exists explicit mappings to define a diffusion model from a flow matching model and vice-versa. This overview does not dive into the training of such models, i.e., we assume that all the learnable quantities have been adequatly optimized. We also do not discuss the different sampling techniques used at inference. Both the training and the inference will be discussed in further sections.  -->
 
-### Notation (to remove) 
-
-$\mathbf{X}_t$
-$\pi$
-$\mathcal{N}(0, \mathrm{Id})$
-my nitpick on the backward
-$\mathbf{Y}_t$ for the backward process
-$\alpha_t, \sigma_t, \varepsilon_t$ for FM
-$f_t, g_t, \eta_t$ for DM
-$A_t, S_t$ for the obtained interpolation from DM
-
-We should pick a name (Flow Matching) and stick with it (but mention in the intro stochastici nterpolantetc)
 
 ### Diffusion models
 
 A diffusion process gradually destroys an observed data $$ \bf{x} $$ over time $$t$$, by mixing the data with Gaussian noise:
-
+$$
 \begin{equation}
 {\bf z}_t = \alpha_t {\bf x} + \sigma_t {\boldsymbol \epsilon}, \;\mathrm{where} \; {\boldsymbol \epsilon} \sim \mathcal{N}(0, {\bf I}).
 \label{eq:forward}
 \end{equation}
-$$\alpha_t$$ and $$\sigma_t$$ define the **noise schedule**. A useful notation is the log signal-to-noise ratio $$\lambda_t = \log(\alpha_t^2 / \sigma_t^2)$$, which monotonically decreases as $$t$$ increases (i.e., goes from clean data to Gaussian noise). 
-The diffusion process can also be expressed as a forward stochastic differential equation (SDE): 
-\begin{equation}
-\mathrm{d}{\bf z} = f(t) {\bf z} \mathrm{d}t + g(t) \mathrm{d}{\bf w},
-\end{equation}
-where $${\bf w}$$ is a standard Wiener process, and 
-\begin{equation}
-f(t) = \frac{\mathrm{d} \log \alpha_t}{\mathrm{d}t}, \; g^2(t) = \frac{\mathrm{d} \sigma_t^2}{\mathrm{d}t} - 2 \frac{\mathrm{d} \log \alpha_t}{\mathrm{d}t}\sigma_t^2
-\end{equation}
-For generating samples, one can solve a SDE that runs backwards in time and exactly revserses the forward SDE:
-\begin{equation}
-d{\bf z} = \left[f(t) {\bf z} - g(t)^2 \nabla _{\bf z} \log p_t({\bf z}) \right] dt + g(t) \mathrm{d}{\bf w},
-\end{equation}
-where $$\nabla _{\bf z} \log p_t({\bf z})$$ is the *score function* at time $$t$$.
-An alternative is to solve a probability flow ODE that gives the same marginal distribution as the reverse SDE at every time step $$t$$:
-\begin{equation}
-\mathrm{d}{\bf z} = \left[f(t) {\bf z} - \frac{1}{2} g(t)^2 \nabla _{\bf z} \log p_t({\bf z}) \right] \mathrm{d}t.
-\end{equation}
-Both sampling equations involve estimating the score function that we cana parametrize as a score network $$\hat{\bf s} = \hat{\bf s}({\bf z}_t; t)$$, but we don't have access to the ground truth score to use as the target during training. Thankfully, we observe that $$\nabla _{\bf z} \log p_t({\bf z}) = \mathbb{E}_{p({\bf x} | {\bf z}_t)}\left[  \log p({\bf z}_t | {\bf x}) \right]$$. Therefore, we can instead use the conditioinal score $$\nabla _{\bf z}\log p({\bf z}_t | {\bf x}) = - {\boldsymbol \epsilon} / \sigma_t$$ as the target of the score network, and one can show that minimizing a mean squared error loss with the conditional score is equivalent to miminizing the same loss with the marginal score in expectation.
+$$
+$$\alpha_t$$ and $$\sigma_t$$ define the **noise schedule**. A useful notation is the log signal-to-noise ratio $$\lambda_t = \log(\alpha_t^2 / \sigma_t^2)$$, which monotonically decreases as $$t$$ increases from $$0$$ to $$1$$ (i.e., goes from clean data to Gaussian noise). 
+
+To generate new samples, we can "reverse" the forward process gradually: Initialize the sample from Gaussian at the highest noise level. Given the sample $${\bf z}_t$$ at time step $$t$$, we predict what the clean sample might look like with a neural network $$\hat{\bf x} = \hat{\bf x}({\bf z}_t; t)$$, and then we project it back to a lower noise level with the same forward transformation:
+
+$$
+\begin{eqnarray}
+{\bf z}_{t - \Delta t} &=& \alpha_{t - \Delta t} \hat{\bf x} + \sigma_{t - \Delta t} \hat{\boldsymbol \epsilon},\\
+\end{eqnarray}
+$$
+where $$\hat{\boldsymbol \epsilon} = ({\bf z}_t - \alpha_t \hat{\bf x}) / \sigma_t$$. We keep alternating between predicting the clean data, and projecting it back to a lower noise level until we get the clean sample.
+This is the DDIM sampler <d-cite key="song2020denoising"></d-cite>. The randomness of samples only comes from the initial Gaussian sample, and the entire reverse process is deterministic. In the sampling session we will discuss other variants of diffusion samplers. 
 ### Flow matching
-Flow Matching (and stochastic interpolant) provides another perspective of the forward process in Eq. \ref{eq:forward}: Instead of viewing it as gradually adding noise to the data $${\bf x}$$ as time increases, it can be viewed as an interpolation between the data $${\bf x}$$ and the Gaussian noise $$\boldsymbol \epsilon$$. In the more general case, it can be an interpolation of two arbitrary distributions. We can therefore get an associated ODE:
+Flow Matching (also known as rectified flow, or a special case of stochastic interpolant) provides another perspective of the forward process: Instead of viewing it as gradually adding noise to the clean data, we view it as an interpolation between the data $${\bf x}$$ and the Gaussian noise $$\boldsymbol \epsilon$$. In the more general case, it can be an interpolation of two arbitrary distributions. The forward process is further simplified as $${\bf z}_t = t {\bf x} + (1-t) {\boldsymbol \epsilon}$$. The evolvement of $${\bf z}_t$$ over time can be expressed as $${\bf z}_t = {\bf z}_{t - \Delta t} + ({\bf x} - {\boldsymbol \epsilon}) \Delta t$$, where $${\bf x} - {\bf \epsilon}$$ is the "velocity", "flow", or "vector field". For sampling, we simply do time reversal, and replace the vector field with our best guess at time step $$t$$ given $${\bf z}_t$$ (since we do not have access to $${\bf x}$$ during sampling):
 
-\begin{equation}
-\mathrm{d} \mathbf{z}_t = \left[ \dot{\alpha}_t \mathbf{x} + \dot{\sigma}_t {\boldsymbol \epsilon} \right] \mathrm{d} t = {\bf u_t} \mathrm{d} t,
-\end{equation}
+$$
+\begin{eqnarray}
+{\bf z}_{t - \Delta t} = {\bf z}_t - (\hat{\bf x} - \hat{\boldsymbol \epsilon})\Delta t.\\
+\end{eqnarray}
+$$
+$$\hat{\bf u} = \hat{\bf u}({\bf z}_t; t) := \hat{\bf x} - \hat{\boldsymbol \epsilon}$$ can be parametrized by a neural network.
 
-where $${\bf u}_t$$ is called the *flow matching vector field* at time t. Inverting this ODE for generating samples seems to be trivial, just run the ODE backward in time. However, at inference we do not have access to $${\bf x}$$, i.e., the datapoint, neither to the ground truth vector field $${\bf u}_t$$. We can use a vector field network $$\hat{\bf u} = \hat{\bf u}({\bf z}_t; t)$$ to esimate that, and again we need to define a valid target for that (the ground truth marginal vector field is unknown). Flow matching proves that, assume $${\bf u} ({\bf z}_t \lvert {\bf x})$$ is a conditional vector field  that generates the conditional probablity path $$p_t(\cdot \lvert {\bf x})$$, then $$\mathbb{E}_{p({\bf x}\lvert{\bf z}_t)} \left[ {\bf u}({\bf z}_t \lvert {\bf x}) \right]$$ generates the marginal probability path $$p_t(\cdot)$$. As a result, we can use the conditional vector field $${\bf u} ({\bf z}_t \lvert {\bf x}) = \dot{\alpha}_t \mathbf{x} + \dot{\sigma}_t {\boldsymbol \epsilon}$$ as the target.
 
-So far we can already sense that the two frameworks share very similar flavors:
+So far we can already sense the similar flavors of the two frameworks:
 
-<!-- <div style="background-color: #f9f9f9; border-left: 6px solid #4CAF50; padding: 10px; margin: 10px 0;"> -->
 
-1. They share the same forward process, if assuming one of the intepolation distributions of flow matching is Gaussian distribution.
-
-2. For sampling, both can leverage a reverse ODE process for generating samples of the data distribution, starting from the Gaussian distribution. 
-
-3. Both reverse process involves an unknown whose marginal target is also unknown, and we need some tricks to define a trackable conditional target. 
-
-<!-- </div> -->
+<div style="background-color: lightyellow; padding: 10px; border-left: 6px solid #FFD700;">
+  <p>1. <strong>Same forward process</strong>: assume that one of the intepolation distributions of flow matching is Gaussian, and the noise schedule of diffusion models is in a particular form. </p>
+  <p>2. <strong>"Similar" sampling processes</strong>: both reverse the forward process with an iterative update that involves the unknown clean data, which is replaced by the best guess at the current time step. (Spoiler: later we will show they are exactly the same!)</p>
+</div>
 
 
 
-Next we will illustrate
 
 ## Training 
 
-We will start by introducing a general training framework, and then discuss how flow matching and diffusion models fit in this framework. 
-<!-- For Gaussian flow matching, $$\alpha_t = t$$ and $$\sigma_t = 1-t$$. -->
+<!-- For training, a neural network is estimated to predict $$\hat{\boldsymbol \epsilon} = \hat{\boldsymbol \epsilon}({\bf z}_t; t)$$ that effectively estimates $${\mathbb E} [{\boldsymbol \epsilon} \vert {\bf z}_t]$$, the expected noise added to the data given the noisy sample. Other **model outputs** have been proposed in the literature which are linear combinations of $$\hat{\boldsymbol \epsilon}$$ and $${\bf z}_t$$, and $$\hat{\boldsymbol \epsilon}$$ can be derived from the model output given $${\bf z}_t$$.  -->
 
-For training, a neural network is estimated to predict $$\hat{\boldsymbol \epsilon} = \hat{\boldsymbol \epsilon}({\bf z}_t; t)$$ that effectively estimates $${\mathbb E} [{\boldsymbol \epsilon} \vert {\bf z}_t]$$, the expected noise added to the data given the noisy sample. Other **model outputs** have been proposed in the literature which are linear combinations of $$\hat{\boldsymbol \epsilon}$$ and $${\bf z}_t$$, and $$\hat{\boldsymbol \epsilon}$$ can be derived from the model output given $${\bf z}_t$$. Learning the model is done by minimizing a weighted mean squared error (MSE) loss <d-cite key="kingma2024understanding,hoogeboom2024simpler"></d-cite>:
-
+For diffusion models, <d-cite key="kingma2024understanding,hoogeboom2024simpler"></d-cite> summarize the training as estimating a neural network to predict $$\hat{\bf x} = \hat{\bf x}({\bf z}_t; t)$$, or a linear combination of $$\hat{\bf x}$$ and $${\bf z}_t$$. Learning the model is done by minimizing a weighted mean squared error (MSE) loss :
+$$
 \begin{equation}
-\mathcal{L}(\mathbf{x}) = \mathbb{E}_{t \sim \mathcal{U}(0,1), \boldsymbol{\epsilon} \sim \mathcal{N}(0, \mathbf{I})} \left[ \textcolor{green}{w(\lambda_t)} \cdot \frac{d\lambda}{dt} \cdot \lVert\hat{\boldsymbol{\epsilon}} - \boldsymbol{\epsilon}\rVert_2^2 \right],
+\mathcal{L}(\mathbf{x}) = \mathbb{E}_{t \sim \mathcal{U}(0,1), \boldsymbol{\epsilon} \sim \mathcal{N}(0, \mathbf{I})} \left[ \textcolor{green}{w(\lambda_t)} \cdot \frac{\mathrm{d}\lambda}{\mathrm{d}t} \cdot \lVert\hat{\bf x} - {\bf x}\rVert_2^2 \right],
 \end{equation}
-where $$\textcolor{green}{w(\lambda_t)}$$ is the **weighting function**, balancing the importance of the loss at different noise levels. So far there are three design choices that are seemingly important: noise schedule, model output, and weighting function, that we will elaborate below.
+$$
+where $$\lambda_t$$ is the log signal-to-noise ratio, and $$\textcolor{green}{w(\lambda_t)}$$ is the **weighting function**, balancing the importance of the loss at different noise levels. The term $$\mathrm{d}\lambda / {\mathrm{d}t}$$ in the training objective seems unnatural and one may wonder why not merging it with the weighting function. As we will show below, this term helps *disentangle* the factors of noise schedule and weighting function clearly, and makes only one of them matter.  
+
+To see why flow matching also fits in the above training objective, recall the conditional flow matching objective used by <d-cite key="lipman2022flow, liu2022flow"></d-cite> is
+
+$$
+\begin{equation}
+\mathcal{L}_{\mathrm{CFM}}(\mathbf{x}) = \mathbb{E}_{t \sim \mathcal{U}(0,1), \boldsymbol{\epsilon} \sim \mathcal{N}(0, \mathbf{I})} \left[ \lVert \hat{\bf u} - {\bf u} \rVert_2^2 \right]
+\end{equation}
+$$
+
+Since $$\hat{\bf u} = \hat{\bf x} - \hat{\boldsymbol{\epsilon}} = \hat{\bf x} - ({\bf z}_t - \alpha_t \hat{\bf x}) / \sigma_t$$ is a linear combination of $$\hat{\bf x}$$ and $${\bf z}_t$$, the CFM training objective can be rewritten as mean squared error on $${\bf x}$$ with a specific weighting. 
+
+For training there are three design choices that are typically considered in the literature: training noise schedule, network output, and weighting function. There is often confusion in the field about how these choices affect the results and what the tuning recipe one should choose. We will elaborate them below.
+
+### Network output
+Below we summarize several network outputs proposed in the literature, including a few of diffusion models and the one of flow matching. One may see the training objective defined with different network outputs in different papers. From the perspective of training objective, they all correspond to having some additional weighting in front of the $${\bf x}$$-MSE that can be absorbed in the weighting function. 
+
+| Network Output  | Formulation   | MSE on Network Output  |
+| :------------- |:-------------:|-----:|
+| $${\bf x}$$-prediction      | $$\hat{\bf x} $$      | $$ \lVert\hat{\bf x} - {\bf x}\rVert_2^2 $$ |
+| $${\boldsymbol \epsilon}$$-prediction      |$$\hat{\boldsymbol \epsilon} = ({\bf z}_t - \alpha_t \hat{\bf x}) / \sigma_t$$ | $$\lVert\hat{\boldsymbol{\epsilon}} - \boldsymbol{\epsilon}\rVert_2^2 = e^{\lambda} \lVert\hat{\bf x} - {\bf x}\rVert_2^2 $$|
+| $${\bf v}$$-prediction | $$\hat{\bf v} = \alpha_t \hat{\boldsymbol{\epsilon}} - \sigma_t \hat{\bf x} $$      |    $$ \lVert\hat{\bf v} - {\bf v}\rVert_2^2 = \sigma_t^2(e^{-\lambda} + 1)^2 \lVert\hat{\bf x} - {\bf x}\rVert_2^2 $$ |
+| $${\bf u}$$-flow matching vector field | $$\hat{\bf u} = \hat{\bf x} - \hat{\boldsymbol{\epsilon}} $$      |    $$ \lVert\hat{\bf u} - {\bf u}\rVert_2^2 = (1 + e^{\lambda / 2})^2 \lVert\hat{\bf x} - {\bf x}\rVert_2^2 $$ |
+
+In practice, however, the model output might make a difference. Specifically,
+* $${\bf x}$$-prediction can be problematic at low noise levels. One reason is that the input sample at low noise levels is pretty close to the clean data and the optimization problem over $${\bf x}$$-MSE becomes almost trivial. The fine-grained details can be largely ignored by the model. The other reason is that any error in $$\hat{\bf x}$$ will get ampified in $$\hat{\boldsymbol \epsilon} = ({\bf z}_t - \alpha_t \hat{\bf x}) / \sigma_t$$, as $$\sigma_t$$ is close to 0.
+* Following the similar reason, $${\boldsymbol \epsilon}$$-prediction can be problematic at high noise levels, i.e., the model prediction becomes not informative, and the error gets amplified in $$\hat{\bf x}$$.
+
+Therefore, a heuristic is to choose a network output that is a combination of $${\bf x}$$- and $${\boldsymbol \epsilon}$$-prediction, which applies to the $${\bf v}$$-prediction and flow matching vector field. 
+
+### Weighting function
+
+
+
 ### Noise schedule
 The noise schedule of flow matching is in a very simple form: $$\alpha_t = t, \sigma_t = 1 - t$$. Various noise schedules have been proposed in the diffusion literature, such as variance-preserving schedules ($$\alpha_t^2 + \sigma_t^2 = 1$$), variance-exploding schedules ($$\alpha_t=1$$), and other options in between. A few remarks about noise schedule:
 1. All different noise schedules can be normalized as a variance-preserving schedule, with a linear scaling of $${\bf z}_t$$ and an unscaling at the model input. The key defining property of a noise schedule is the log signal-to-noise ratio $$\lambda_t$$.
 2. The training loss is *invariant* to the training noise schedule, since the loss fuction can be rewritten as $$\mathcal{L}(\mathbf{x}) = \int_{\lambda_{\min}}^{\lambda_{\max}} w(\lambda) \mathbb{E}_{\boldsymbol{\epsilon} \sim \mathcal{N}(0, \mathbf{I})} \left[ \|\hat{\boldsymbol{\epsilon}} - \boldsymbol{\epsilon}\|_2^2 \right] \, d\lambda$$, which is irrelevant to $$\lambda_t$$. However, $$\lambda_t$$ might still affect the variance of the Monte Carlo estimator of the training loss. A few heuristics have been proposed in the literature to automatically adjust the noise schedules over the training course. See [Sander's blog post](https://sander.ai/2024/06/14/noise-schedules.html#adaptive) for a nice summary.
 3. As we will see in the next section, the testing noise schedule does impact the sample quality. However, one can choose completely different noise schedules for training and sampling, based on distinct heuristics: For training, it is desirable to have a noise schedule that minimizes the variance of the Monte Calor estimator, whereas for sampling the noise schedule is more related to the discretization error of the ODE / SDE sampling trajectories and the model curvature.
 
-### Model output
-Below we summarize several  model outputs proposed in the literature, including a few of diffusion models and the one of flow matching. If the loss if defined as the weighted MSE over different model outputs other than $$\hat{\boldsymbol \epsilon} $$, it corresponds to having a weighting in front of the $$\hat{\boldsymbol \epsilon}$$-MSE, that can be absorbed in the weighting function $$w(\lambda_t)$$.
-
-| Model Output  | Formulation   | MSE on Model Output  |
-| :------------- |:-------------:|-----:|
-| $${\boldsymbol \epsilon}$$-prediction      |$$\hat{\boldsymbol \epsilon} $$ | $$\lVert\hat{\boldsymbol{\epsilon}} - \boldsymbol{\epsilon}\rVert_2^2 $$ |
-| $${\bf x}$$-prediction      | $$\hat{\bf x} = \frac{1}{\alpha_t} {\bf z}_t - \frac{\sigma_t}{\alpha_t} \hat{\boldsymbol \epsilon}$$      | $$ \lVert\hat{\bf x} - {\bf x}\rVert_2^2 = e^{- \lambda} \lVert\hat{\boldsymbol{\epsilon}} - \boldsymbol{\epsilon}\rVert_2^2 $$ |
-| $${\bf v}$$-prediction | $$\hat{\bf v} = \alpha_t \hat{\boldsymbol{\epsilon}} - \sigma_t \hat{\bf x} $$      |    $$ \lVert\hat{\bf v} - {\bf v}\rVert_2^2 = \alpha_t^2(e^{-\lambda} + 1)^2 \lVert\hat{\boldsymbol{\epsilon}} - \boldsymbol{\epsilon}\rVert_2^2 $$ |
-| $${\bf u}$$-flow matching vector field | $$\hat{\bf u} = \hat{\bf x} - \hat{\boldsymbol{\epsilon}} $$      |    $$ \lVert\hat{\bf u} - {\bf u}\rVert_2^2 = (1 + e^{-\lambda / 2})^2 \lVert\hat{\boldsymbol{\epsilon}} - \boldsymbol{\epsilon}\rVert_2^2 $$ |
 
 
-### Weighting function
 
 #### 
 
@@ -206,6 +207,21 @@ Weighting function balances the importance of different noise levels during trai
 ## From Diffusion Models to Flow Matching and back
 
 In this section, we show the equivalence between diffusion models and flow matching approaches from a stochastic process point of view. Note that it is possible to show this equivalence using other apporaches [CITE]
+
+
+### Notation (to remove) 
+
+$\mathbf{X}_t$
+$\pi$
+$\mathcal{N}(0, \mathrm{Id})$
+my nitpick on the backward
+$\mathbf{Y}_t$ for the backward process
+$\alpha_t, \sigma_t, \varepsilon_t$ for FM
+$f_t, g_t, \eta_t$ for DM
+$A_t, S_t$ for the obtained interpolation from DM
+
+We should pick a name (Flow Matching) and stick with it (but mention in the intro stochastici nterpolantetc)
+
 
 ### Flow Matching
 
@@ -259,7 +275,21 @@ Hence in flow matching we have three free parameters:
 * $\sigma_t$ -- smol description
 * $\varepsilon_t$ -- smol description
 
+
+(ruiqi backup)
+
+In the more general case, it can be an interpolation of two arbitrary distributions. We can therefore get an associated ODE:
+
+$$
+\begin{eqnarray}
+\mathrm{d} \mathbf{z}_t = \left[ \dot{\alpha}_t \mathbf{x} + \dot{\sigma}_t {\boldsymbol \epsilon} \right] \mathrm{d} t = {\bf u_t} \mathrm{d} t,
+\end{eqnarray}
+$$
+where $${\bf u}_t$$ is called the *flow matching vector field* at time t. Inverting this ODE for generating samples seems to be trivial, just run the ODE backward in time. However, at inference we do not have access to $${\bf x}$$, i.e., the datapoint, neither to the ground truth vector field $${\bf u}_t$$. We can use a vector field network $$\hat{\bf u} = \hat{\bf u}({\bf z}_t; t)$$ to esimate that, and again we need to define a valid target for that (the ground truth marginal vector field is unknown). Flow matching proves that, assume $${\bf u} ({\bf z}_t \lvert {\bf x})$$ is a conditional vector field  that generates the conditional probablity path $$p_t(\cdot \lvert {\bf x})$$, then $$\mathbb{E}_{p({\bf x}\lvert{\bf z}_t)} \left[ {\bf u}({\bf z}_t \lvert {\bf x}) \right]$$ generates the marginal probability path $$p_t(\cdot)$$. As a result, we can use the conditional vector field $${\bf u} ({\bf z}_t \lvert {\bf x}) = \dot{\alpha}_t \mathbf{x} + \dot{\sigma}_t {\boldsymbol \epsilon}$$ as the target.
+
+
 ### Diffusion models
+
 
 In diffusion models we usually define a forward process that we try to reverse.
 
@@ -302,6 +332,38 @@ Hence in flow matching we have three free parameters:
 * $f_t$ -- smol description
 * $g_t$ -- smol description
 * $\eta_t$ -- smol description
+
+
+(ruiqi backup)
+
+The diffusion process can also be expressed as a forward stochastic differential equation (SDE): 
+
+$$
+\begin{equation}
+\mathrm{d}{\bf z} = f(t) {\bf z} \mathrm{d}t + g(t) \mathrm{d}{\bf w},
+\end{equation}
+$$
+where $${\bf w}$$ is a standard Wiener process, and 
+$$
+\begin{equation}
+f(t) = \frac{\mathrm{d} \log \alpha_t}{\mathrm{d}t}, \; g^2(t) = \frac{\mathrm{d} \sigma_t^2}{\mathrm{d}t} - 2 \frac{\mathrm{d} \log \alpha_t}{\mathrm{d}t}\sigma_t^2
+\end{equation}
+$$
+For generating samples, one can solve a SDE that runs backwards in time and exactly revserses the forward SDE:
+$$
+\begin{equation}
+d{\bf z} = \left[f(t) {\bf z} - g(t)^2 \nabla _{\bf z} \log p_t({\bf z}) \right] dt + g(t) \mathrm{d}{\bf w},
+\end{equation}
+$$
+where $$\nabla _{\bf z} \log p_t({\bf z})$$ is the *score function* at time $$t$$.
+An alternative is to solve a probability flow ODE that gives the same marginal distribution as the reverse SDE at every time step $$t$$:
+$$
+\begin{equation}
+\mathrm{d}{\bf z} = \left[f(t) {\bf z} - \frac{1}{2} g(t)^2 \nabla _{\bf z} \log p_t({\bf z}) \right] \mathrm{d}t.
+\end{equation}
+$$
+Both sampling equations involve estimating the score function that we cana parametrize as a score network $$\hat{\bf s} = \hat{\bf s}({\bf z}_t; t)$$, but we don't have access to the ground truth score to use as the target during training. Thankfully, we observe that $$\nabla _{\bf z} \log p_t({\bf z}) = \mathbb{E}_{p({\bf x} | {\bf z}_t)}\left[  \log p({\bf z}_t | {\bf x}) \right]$$. Therefore, we can instead use the conditioinal score $$\nabla _{\bf z}\log p({\bf z}_t | {\bf x}) = - {\boldsymbol \epsilon} / \sigma_t$$ as the target of the score network, and one can show that minimizing a mean squared error loss with the conditional score is equivalent to miminizing the same loss with the marginal score in expectation.
+
 
 ### How to relate these two models?
 
