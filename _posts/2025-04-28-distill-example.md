@@ -217,6 +217,12 @@ The formal proof requires certain manipulation of Fokker-Planck equation <d-cite
 {% include figure.html path="assets/img/2025-04-28-distill-example/particle_movement.gif" class="img-fluid" %}
 For each individual sample, the moving direction of the two updates are very different. The drift update consistently drags every sample away from the modes of the distribution, while the diffusion update is purely random. However, aggregating all samples together, the distribution of the samples after the update is the same. The drift update is about stretching or flattening the distribution, whereas the diffusion update is about smoothing and reducing the curvature of the distribution. The DDIM sampler can be considered a negative drift update per time step (i.e. moving towards not away from the modes). The stochastic sampler can be understood as running a nagative drift update with a large step first, and then running the diffusion update which is equivalent to a drift update. The overall effect is the same as running a negative drift update with a smaller step. Having the diffusion update helps correct the potential error in the negative drift update, but meanwhile becomes less efficient as it cancels out part of the negative drift update.
 
+In fact, performing one DDPM sampling step going from $\lambda_t$ to $\lambda_t + \Delta\lambda$ is equivalent to performing one DDIM sampling step to $\lambda_t + 2\Delta\lambda$, and then renoising to $\lambda_t + \Delta\lambda$ by doing forward diffusion (Emiel, do you want to write this out in detail somewhere?). DDPM thus reverses exactly half the progress made by DDIM, in terms of the log signal-to-noise ratio. However, the fraction of the DDIM step to undo by renoising is a hyperparameter which we are free to choose, and which has been called the level of _churn_ by [Insert citation to EDM paper]. The effect of adding churn to our sampler is to diminish the effect on our final sample of our model predictions made early during sampling, and to increase the weight on later predictions. This is shown in the Figure below
+
+{% include figure.html path="assets/img/2025-04-28-distill-example/ddim_vs_ddpm.png" class="img-fluid" %}
+
+Todo: replace this figure with an interactive version with a slider on the level of churn.
+
 ## From Diffusion Models to Flow Matching and back
 
 In this section, we show the equivalence between diffusion models and flow matching approaches from a stochastic process point of view. Note that it is possible to show this equivalence using other apporaches [CITE]
