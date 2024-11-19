@@ -120,12 +120,10 @@ $$\hat{\bf u} = \hat{\bf u}({\bf z}_t; t) := \hat{\bf x} - \hat{\boldsymbol \eps
 So far we can already sense the similar flavors of the two frameworks:
 
 
-<div style="background-color: lightyellow; padding: 10px; border-left: 6px solid #FFD700;">
-  <p>1. <strong>Same forward process</strong>: assume that one of the intepolation distributions of flow matching is Gaussian, and the noise schedule of diffusion models is in a particular form. </p>
-  <p>2. <strong>"Similar" sampling processes</strong>: both reverse the forward process with an iterative update that involves the unknown clean data, which is replaced by the best guess at the current time step. (Spoiler: later we will show they are exactly the same!)</p>
+<div style="background-color: lightyellow; padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
+  <p>1. <strong>Same forward process</strong>: assume that one end of the flow matching is Gaussian, and the noise schedule of diffusion models is in a particular form. </p>
+  <p  style="margin: 0;">2. <strong>"Similar" sampling processes</strong>: both follow an iterative update that involves the unknown clean data, which is replaced by the best guess of the clean data at the current time step. (Spoiler: later we will show they are exactly the same!)</p>
 </div>
-
-
 
 
 ## Training 
@@ -168,41 +166,52 @@ In practice, however, the model output might make a difference. Specifically,
 
 Therefore, a heuristic is to choose a network output that is a combination of $${\bf x}$$- and $${\boldsymbol \epsilon}$$-prediction, which applies to the $${\bf v}$$-prediction and flow matching vector field. 
 
-### Weighting function
-
-
 
 ### Noise schedule
 The noise schedule of flow matching is in a very simple form: $$\alpha_t = t, \sigma_t = 1 - t$$. Various noise schedules have been proposed in the diffusion literature, such as variance-preserving schedules ($$\alpha_t^2 + \sigma_t^2 = 1$$), variance-exploding schedules ($$\alpha_t=1$$), and other options in between. A few remarks about noise schedule:
-1. All different noise schedules can be normalized as a variance-preserving schedule, with a linear scaling of $${\bf z}_t$$ and an unscaling at the model input. The key defining property of a noise schedule is the log signal-to-noise ratio $$\lambda_t$$.
-2. The training loss is *invariant* to the training noise schedule, since the loss fuction can be rewritten as $$\mathcal{L}(\mathbf{x}) = \int_{\lambda_{\min}}^{\lambda_{\max}} w(\lambda) \mathbb{E}_{\boldsymbol{\epsilon} \sim \mathcal{N}(0, \mathbf{I})} \left[ \|\hat{\boldsymbol{\epsilon}} - \boldsymbol{\epsilon}\|_2^2 \right] \, d\lambda$$, which is irrelevant to $$\lambda_t$$. However, $$\lambda_t$$ might still affect the variance of the Monte Carlo estimator of the training loss. A few heuristics have been proposed in the literature to automatically adjust the noise schedules over the training course. See [Sander's blog post](https://sander.ai/2024/06/14/noise-schedules.html#adaptive) for a nice summary.
+1. All different noise schedules can be normalized as a variance-preserving schedule, with a linear scaling of $${\bf z}_t$$ and an unscaling at the network input. The key defining property of a noise schedule is the log signal-to-noise ratio $$\lambda_t$$.
+2. The training loss is *invariant* to the training noise schedule, since the loss fuction can be rewritten as $$\mathcal{L}(\mathbf{x}) = \int_{\lambda_{\min}}^{\lambda_{\max}} w(\lambda) \mathbb{E}_{\boldsymbol{\epsilon} \sim \mathcal{N}(0, \mathbf{I})} \left[ \|\hat{\boldsymbol{\epsilon}} - \boldsymbol{\epsilon}\|_2^2 \right] \, d\lambda$$, which is irrelevant to $$\lambda_t$$, and only related $$\lambda_{\mathrm{min}}$$ and $$\lambda_{\mathrm{max}}$$. However, $$\lambda_t$$ might still affect the variance of the Monte Carlo estimator of the training loss. A few heuristics have been proposed in the literature to automatically adjust the noise schedules over the training course. See [Sander's blog post](https://sander.ai/2024/06/14/noise-schedules.html#adaptive) for a nice summary.
 3. As we will see in the next section, the testing noise schedule does impact the sample quality. However, one can choose completely different noise schedules for training and sampling, based on distinct heuristics: For training, it is desirable to have a noise schedule that minimizes the variance of the Monte Calor estimator, whereas for sampling the noise schedule is more related to the discretization error of the ODE / SDE sampling trajectories and the model curvature.
 
 
+### Weighting function
 
+Weighting function balances the importance of different noise levels during training, and effectively balances the importance of high frequency and low frequency components of the input signal. **(TODO, making a figure to illustrate weighting function versus frequency components.)** This is crucial for modeling perceptual signals such as images, videos and audios, as certain high frequency components in those signals are not visible to human perception, and thus better not to waste model capacity on them. We want to highlight one fact:
 
-#### 
-
-Weighting function balances the importance of different noise levels during training, and effectively balances the importance of high frequency and low frequency components of the input signal. (TODO, making a figure to illustrate weighting function versus frequency components.) This is crucial for modeling perceptual signal such as images, videos and audios, as there are 
-
-
-<div style="background-color: #f9f9f9; border-left: 6px solid #4CAF50; padding: 10px; margin: 10px 0;">
-
-**Note:** This is a remark section. You can customize the colors, text, and padding to suit your webpage's style.
-
+<div style="background-color: lightyellow; padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
+  <p>For training objectives,</p>
+  <p align="center" style="margin: 0;"><em>Flow matching == diffusion models with ${\bf v}$-MSE loss + cosine noise schedule.</em></p>
 </div>
+
+
+See Appendix D.2-3 in <d-cite key="kingma2024understanding"></d-cite> for a detailed derivation. Figure **TODO** plots several commonly used weighting functions in the literature. 
+
+In summary, we have the following conclusions for diffusion models / flow matching training:
+
+<div style="background-color: lightyellow; padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
+  <p>1. Weighting function <strong>balances the importance of different frequency components in the data</strong>. Should tune based on the characteristics of the input data </p>
+  <p>2. Noise schedule <strong>does not affect the training objective</strong> and only affects the training efficiency. As long as the endpoints are far enough it should not affect the results dramatically. Can use an adative noise schedule in the literature to speed up training. </p>
+  <p style="margin: 0;">3. The <strong>network output proposed by flow matching is new</strong>. A network output that nicely balances ${\bf x}$- and ${\epsilon}$-prediction is desirable. </p>
+</div>
+
 
 ## Sampling and Straightness Misnomer
 
 <p align="center"><i>"Flow matching paths are straight, whereas diffusion paths are curved."</i></p>
 
-{% raw %}<div class="l-page">
-  <iframe src="{{ 'assets/html/peak_vp.html' | relative_url }}" frameborder='0' scrolling='no' height="600px" width="100%"></iframe>
-</div>{% endraw %}
 
-{% raw %}<div class="l-page">
-  <iframe src="{{ 'assets/html/peak_flow.html' | relative_url }}" frameborder='0' scrolling='no' height="600px" width="100%"></iframe>
-</div>{% endraw %}
+### Deterministic sampler vs. stochastic sampler
+
+So far we mainly cover the deterministic sampler of diffusion models or flow matching. An alternative is to use stochastic samplers such as DDPM sampler. The key to derive the stochastic sampler is as follows. Given $${\bf z}_t$$, these two updates are equivalent in distribution:
+$$
+\begin{eqnarray}
+{\bf z}_{t+\Delta t} &=& {\bf z}_t - \frac{\sigma_t^2}{2} \nabla_{\bf z} \log p_t({\bf z}) \Delta t \qquad\qquad \text{(Drift udpate)}  \\
+{\bf z}_{t+\Delta t} &=& {\bf z}_t + \sigma_t \sqrt{\Delta t} {\bf e}_t, \; {\bf e}_t \sim \mathcal{N}({\bf 0}; {\bf I}) \qquad  \text{(Diffusion udpate)}
+\end{eqnarray}
+$$
+The formal proof requires certain manipulation of Fokker-Planck equation <d-cite key="song2020score"></d-cite>. We can understand it intuitively by the following illustration on a 2D Gaussian mixture example:
+{% include figure.html path="assets/img/2025-04-28-distill-example/particle_movement.gif" class="img-fluid" %}
+For each individual sample, the moving direction of the two updates are very different. The drift update consistently drags every sample away from the modes of the distribution, while the diffusion update is purely random. However, aggregating all samples together, the distribution of the samples after the update is the same. The drift update is about stretching or flattening the distribution, whereas the diffusion update is about smoothing and reducing the curvature of the distribution. The DDIM sampler can be considered a negative drift update per time step (i.e. moving towards not away from the modes). The stochastic sampler can be understood as running a nagative drift update with a large step first, and then running the diffusion update which is equivalent to a drift update. The overall effect is the same as running a negative drift update with a smaller step. Having the diffusion update helps correct the potential error in the negative drift update, but meanwhile becomes less efficient as it cancels out part of the negative drift update.
 
 ## From Diffusion Models to Flow Matching and back
 
