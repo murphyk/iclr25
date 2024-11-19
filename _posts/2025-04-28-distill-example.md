@@ -201,11 +201,11 @@ In summary, we have the following conclusions for diffusion models / flow matchi
 
 <div class="l-page">
   <iframe src="{{ 'assets/html/2025-04-28-distill-example/peak_vp.html' | relative_url }}" frameborder='0' scrolling='no' height="600px" width="100%"></iframe>
-</div>{% endraw %}
+</div>
 
 <div class="l-page">
   <iframe src="{{ 'assets/html/2025-04-28-distill-example/peak_flow.html' | relative_url }}" frameborder='0' scrolling='no' height="600px" width="100%"></iframe>
-</div>{% endraw %}
+</div>
 
 ### Deterministic sampler vs. stochastic sampler
 
