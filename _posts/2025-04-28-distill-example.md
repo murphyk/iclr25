@@ -199,6 +199,13 @@ In summary, we have the following conclusions for diffusion models / flow matchi
 
 <p align="center"><i>"Flow matching paths are straight, whereas diffusion paths are curved."</i></p>
 
+{% raw %}<div class="l-page">
+  <iframe src="{{ 'assets/html/peak_vp.html' | relative_url }}" frameborder='0' scrolling='no' height="600px" width="100%"></iframe>
+</div>{% endraw %}
+
+{% raw %}<div class="l-page">
+  <iframe src="{{ 'assets/html/peak_flow.html' | relative_url }}" frameborder='0' scrolling='no' height="600px" width="100%"></iframe>
+</div>{% endraw %}
 
 ### Deterministic sampler vs. stochastic sampler
 
