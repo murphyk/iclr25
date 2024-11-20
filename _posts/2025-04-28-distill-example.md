@@ -222,21 +222,27 @@ Todo: replace this figure with an interactive version with a slider on the level
 
 Finally, we provide useful formula to move from a Flow Matching point of view to a diffusion model point of view. 
 We do not discuss training and sampling issues here but solely focus on showing that both frameworks are interchangeable. 
-Recalling [CITE OVERVIEW] section, we have that a diffusion model is defined by a forward process of the form 
+
+### Diffusion Models framework hyperparameters
+
+Recalling CITE OVERVIEW section, we have that a diffusion model is defined by a forward process of the form 
+
 $$
 \begin{equation}
 \mathrm{d} {\bf z}_t = f_t {\bf z}_t \mathrm{d} t + g_t \mathrm{d} {\bf z} .
-\label{eq:forward_process}
 \end{equation}
 $$
+
 Hence, the free parameters are given by $f_t$ and $g_t$. From the diffusion model perspective, the generative process is given by the backward of the forward process, i.e.
+
 $$
 \begin{equation}
-\mathrm{d} {\bf z}_t = (f_t {\bf z}_t + \frac{1+ \eta_t^2}{2}g_t^2 \nabla \log p_t({\bf z_t}) ) \mathrm{d} t + \eta_t g_t \mathrm{d} {\bf z} .
-\label{eq:backward_process}
+\mathrm{d} {\bf z}_t = (f_t {\bf z}_t - \frac{1+ \eta_t^2}{2}g_t^2 \nabla \log p_t({\bf z_t}) ) \mathrm{d} t + \eta_t g_t \mathrm{d} {\bf z} .
 \end{equation}
 $$
+
 Note that we have introduced an additional parameter $\eta_t$ which controls the amount of stochasticity at inference time. When discretizing the backward process we recover DDIM in the case $\eta_t = 0$ and DDPM in the case $\eta_t = 1$.
+
 <div style="background-color: lightyellow; padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
   Diffusion model frameworks are entirely determined by three hyperparameters  
   <p>1. $f_t$ which controls how much we forget the original data in the forward process. </p>
@@ -244,5 +250,56 @@ Note that we have introduced an additional parameter $\eta_t$ which controls the
   <p>3. $\eta_t$ which controls the amount of stochasticity at inference time. </p>
 </div>
 
+### Flow Matching framework hyperparameters
 
+Recalling CITE OVERVIEW section, we have that a diffusion model is defined by a forward process of the form 
 
+$$
+\begin{equation}
+{\bf z}_t = \alpha_t {\bf x} + \sigma_t {\bf z} .
+\end{equation}
+$$
+
+Hence, the free parameters are given by $\alpha_t$ and $\sigma_t$. From the flow matching perspective, the generative process is by the following trajectory
+
+$$
+\begin{equation}
+\mathrm{d} {\bf z}_t = (v_t({\bf z_t}) - \varepsilon_t^2 \nabla \log p_t({\bf z_t})) \mathrm{d} t + \varepsilon_t \mathrm{d} {\bf z} .
+\end{equation}
+$$
+
+Note that we have introduced an additional parameter $\varepsilon_t$ which controls the amount of stochasticity at inference time. 
+
+<div style="background-color: lightyellow; padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
+  Flow matching frameworks are entirely determined by three hyperparameters  
+  <p>1. $\alpha_t$ which controls the data component in the interpolation. </p>
+  <p>2. $\sigma_t$ which controls the noise component in the interpolation. </p>
+  <p>3. $\varepsilon_t$ which controls the amount of stochasticity at inference time. </p>
+</div>
+
+### Equivalence of the points of view
+
+Despite their clear similarities it is not immediately clear how to link the diffusion model framework and the flow matching one. 
+Below, we provide formula which provide a one-to-one mapping between the two frameworks. In short:
+
+<div style="background-color: lightyellow; padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
+  Diffusion model and flow matching are just one change of variable away!
+</div>
+
+Given a diffusion model framework, i.e. hyperparameters $f_t, g_t, \eta_t$ one can define 
+
+$$
+\begin{equation}
+\alpha_t = \exp(\int_0^t f_s \mathrm{d}s) , \qquad \sigma_t = (\int_0^t g_s^2 \exp(-2\int_0^s f_u \mathrm{d}u) \mathrm{d} s)^{1/2} , \qquad \varepsilon_t = \eta_t g_t . 
+\end{equation}
+$$
+
+Doing so, the noising process induced by the flow matching and the diffusion framework as well as the generative trajectories!
+Similarly, given a flow matching framework, i.e. hyperparameters $\alpha_t, \sigma_t, \varepsilon_t$ one can define 
+
+$$
+f_t = \partial_t \log(\alpha_t) , \qquad g_t = 2 \alpha_t \sigma_t \partial_t (\sigma_t / \alpha_t) , \qquad \eta_t = \varepsilon_t / (2 \alpha_t \sigma_t \partial_t (\sigma_t / \alpha_t)) . 
+$$
+
+We have the similar conclusion, that under this transformation, diffusion models and flow matching frameworks coincide. 
+To sum up, leaving aside training issues and the choice of the sampler, there is no fundamental differences between the two approaches.
