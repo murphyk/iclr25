@@ -219,212 +219,30 @@ In fact, performing one DDPM sampling step going from $\lambda_t$ to $\lambda_t 
 Todo: replace this figure with an interactive version with a slider on the level of churn.
 
 ## From Diffusion Models to Flow Matching and back
-=======
-## From Diffusion Models to Flow Matching and back (WIP)
->>>>>>> 815fbae (modify sampling)
 
-In this section, we show the equivalence between diffusion models and flow matching approaches from a stochastic process point of view. Note that it is possible to show this equivalence using other apporaches [CITE]
-
-
-### Notation (to remove) 
-
-$\mathbf{X}_t$
-$\pi$
-$\mathcal{N}(0, \mathrm{Id})$
-my nitpick on the backward
-$\mathbf{Y}_t$ for the backward process
-$\alpha_t, \sigma_t, \varepsilon_t$ for FM
-$f_t, g_t, \eta_t$ for DM
-$A_t, S_t$ for the obtained interpolation from DM
-
-We should pick a name (Flow Matching) and stick with it (but mention in the intro stochastici nterpolantetc)
-
-
-### Flow Matching
-
-In Flow Matching (and stochastic interpolant), we start by defining an interpolation. In order to be consistent with diffusion models notation, we will denote $\mathbf{X}_0 \sim \pi$, where $\pi$ is the data distribution and $\mathbf{Z}_1 \sim \mathcal{N}(0, \mathrm{Id})$. 
-
-We start by defining the interpolation
-
-$$
-\mathbf{X}_t = \alpha_t \mathbf{X}_0 + \sigma_t \mathbf{Z} . 
-$$
-
-We would like to flow from $\mathbf{Z}$ to $\mathbf{X}_0$.
-The associated ODE is given by 
-
-$$
-\mathrm{d} \mathbf{X}_t = \left{ \dot{\alpha}_t \mathbf{X}_0 + \dot{\sigma}_t \mathbf{Z} \right} \mathrm{d} t .
-$$
-
-Since, we want to flow from the noise to the data, we define $\mathbf{Y}_t = \mathbf{X}_{1-t}$ and we get that 
-
-$$
-\mathrm{d} \mathbf{Y}_t = - \left{ \dot{\alpha}_{1-t} \mathbf{Y}_1 + \dot{\sigma}_{1-t} \mathbf{Y}_0 \right} \mathrm{d} t .
-$$
-
-Of course, at inference time we do not have access to $\mathbf{Y}_1$, i.e., we do not have access to the original datapoint $\mathbf{X}_0$. Instead, we replace it by our best guess at time $t$. This is equivalent to consider the conditional expectation of the velocity given $\mathbf{Y}_t$. Hence, we define 
-
-$$
-\mathrm{d} \mathbf{Y}_t = - \{ \mathbb{E}[\dot{\alpha}_{1-t} \mathbf{Y}_1 + \dot{\sigma}_{1-t} \mathbf{Y}_0 | \mathbf{Y}_t] \} \mathrm{d} t  . 
-$$
-
-Give theorem to say why this is true?
-
-Usually, the quantity $\mathbb{E}[\dot{\alpha}_{t} \mathbf{X}_0 + \dot{\sigma}_{t} \mathbf{X}_1 | \mathbf{X}_t = x] = v_t(x)$ is called the velocity flow matching and can be learned via regression loss. It corresponds to the loss ... 
-
-There is exists a one-to-one mapping between the flow matching velocity and the score function given by 
-
-$$
-v_t(x) = \tfrac{\dot{\alpha}_t}{\alpha_t} x - \sigma_t ( \dot{\sigma}_t - \tfrac{\dot{\alpha}_t}{\alpha_t} \sigma_t) \nabla \log p_t(x)
-$$
-
-Using the Fokker-Planck trick (maybe have it in the appendix, add Amsterdam (TM) remark that this corresponds to say that stochastic = deterministic + renoising) we can get a stochastic generative process
-
-$$
-\mathrm{d} \mathbf{Y}_t = \{ -v_{1-t}(\mathbf{Y}_t) +\tfrac{\varepsilon_{1-t}^2}{2} \nabla \log p_{1-t}(\mahtbf{Y}_t) \} \mathrm{d} t + \varepsilon_{1-t}  \mathrm{d} \mathbf{B}_t ,
-$$
-
-where $(\mathbf{B}_t)_{t \in [0,1]}$ is a $d$-dimensional Brownian motion (maybe here give a natural interpretation of the Brownian motion and SDE, using the discretisation, talk about exponential integrators?)
-
-Hence in flow matching we have three free parameters:
-* $\alpha_t$ -- smol description
-* $\sigma_t$ -- smol description
-* $\varepsilon_t$ -- smol description
-
-
-(ruiqi backup)
-
-In the more general case, it can be an interpolation of two arbitrary distributions. We can therefore get an associated ODE:
-
-$$
-\begin{eqnarray}
-\mathrm{d} \mathbf{z}_t = \left[ \dot{\alpha}_t \mathbf{x} + \dot{\sigma}_t {\boldsymbol \epsilon} \right] \mathrm{d} t = {\bf u_t} \mathrm{d} t,
-\end{eqnarray}
-$$
-where $${\bf u}_t$$ is called the *flow matching vector field* at time t. Inverting this ODE for generating samples seems to be trivial, just run the ODE backward in time. However, at inference we do not have access to $${\bf x}$$, i.e., the datapoint, neither to the ground truth vector field $${\bf u}_t$$. We can use a vector field network $$\hat{\bf u} = \hat{\bf u}({\bf z}_t; t)$$ to esimate that, and again we need to define a valid target for that (the ground truth marginal vector field is unknown). Flow matching proves that, assume $${\bf u} ({\bf z}_t \lvert {\bf x})$$ is a conditional vector field  that generates the conditional probablity path $$p_t(\cdot \lvert {\bf x})$$, then $$\mathbb{E}_{p({\bf x}\lvert{\bf z}_t)} \left[ {\bf u}({\bf z}_t \lvert {\bf x}) \right]$$ generates the marginal probability path $$p_t(\cdot)$$. As a result, we can use the conditional vector field $${\bf u} ({\bf z}_t \lvert {\bf x}) = \dot{\alpha}_t \mathbf{x} + \dot{\sigma}_t {\boldsymbol \epsilon}$$ as the target.
-
-
-### Diffusion models
-
-
-In diffusion models we usually define a forward process that we try to reverse.
-
-$$
-\mathrm{d} \mathbf{X}_t = f_t \mathbf{X}_t \mathrm{d} t + g_t \mathrm{d} \mathbf{B}_t .
-$$
-
-Associated with this SDE is the following integral representation
-
-$$
-\mathbf{X}_t = A_t \mathbf{X}_0 + S_t Z , \qquad Z \sim \mathrm{N}(0, \mathrm{Id}) . 
-$$
-
-where $A_t$ and $S_t$ are explicit functions of $f_t$ and $g_t$ and can be obtained as
-
-$$
-A_t = \exp[\int_0^t f_s \mathrm{d}s] , \qquad S_t = \int_0^t g_s^2 \exp[-2\int_0^s f_u \mathrm{d}u] \mathrm{d} s . 
-$$
-
-The backward model associated with the forward SDE is given by 
-
-$$
-\mathrm{d} Y_t = \{ -f_{1-t} \mathbf{Y}_t + g_{1-t}^2 \nabla \log p_{1-t}(\mathbf{Y}_t) \} \mathrm{d} t + g_{1-t} \mathrm{d} \mathbf{B}_t .
-$$
-
-Using Tweedie's formula we get that 
-
-$$
-\nabla \log p_t(x) = \mathbb{E}[(A_t \mathbf{X}_0 - \mathbf{X}_t) / S_t | \mathbf{X}_t = x] .
-$$
-
-Similarly to the flow matching setting, we can play with the level of stochasticity.
-We introduce an additional parameter $\eta_t$ and we get a modified version of ... 
-
-$$
-\mathrm{d} Y_t = \{ -f_{1-t} \mathbf{Y}_t + (1 + \eta_{1-t})\tfrac{g_{1-t}^2}{2} \nabla \log p_{1-t}(\mathbf{Y}_t) \} \mathrm{d} t + \eta_{1-t} g_{1-t} \mathrm{d} \mathbf{B}_t .
-$$
-
-Hence in flow matching we have three free parameters:
-* $f_t$ -- smol description
-* $g_t$ -- smol description
-* $\eta_t$ -- smol description
-
-
-(ruiqi backup)
-
-The diffusion process can also be expressed as a forward stochastic differential equation (SDE): 
-
+Finally, we provide useful formula to move from a Flow Matching point of view to a diffusion model point of view. 
+We do not discuss training and sampling issues here but solely focus on showing that both frameworks are interchangeable. 
+Recalling [CITE OVERVIEW] section, we have that a diffusion model is defined by a forward process of the form 
 $$
 \begin{equation}
-\mathrm{d}{\bf z} = f(t) {\bf z} \mathrm{d}t + g(t) \mathrm{d}{\bf w},
+\mathrm{d} {\bf z}_t = f_t {\bf z}_t \mathrm{d} t + g_t \mathrm{d} {\bf z} .
+\label{eq:forward_process}
 \end{equation}
 $$
-where $${\bf w}$$ is a standard Wiener process, and 
+Hence, the free parameters are given by $f_t$ and $g_t$. From the diffusion model perspective, the generative process is given by the backward of \eqref{eq:forward_process}, i.e.
 $$
 \begin{equation}
-f(t) = \frac{\mathrm{d} \log \alpha_t}{\mathrm{d}t}, \; g^2(t) = \frac{\mathrm{d} \sigma_t^2}{\mathrm{d}t} - 2 \frac{\mathrm{d} \log \alpha_t}{\mathrm{d}t}\sigma_t^2
+\mathrm{d} {\bf z}_t = (f_t {\bf z}_t + \frac{1+ \eta_t^2}{2}g_t^2 \nabla \log p_t({\bf z_t}) ) \mathrm{d} t + \eta_t g_t \mathrm{d} {\bf z} .
+\label{eq:backward_process}
 \end{equation}
 $$
-For generating samples, one can solve a SDE that runs backwards in time and exactly revserses the forward SDE:
-$$
-\begin{equation}
-d{\bf z} = \left[f(t) {\bf z} - g(t)^2 \nabla _{\bf z} \log p_t({\bf z}) \right] dt + g(t) \mathrm{d}{\bf w},
-\end{equation}
-$$
-where $$\nabla _{\bf z} \log p_t({\bf z})$$ is the *score function* at time $$t$$.
-An alternative is to solve a probability flow ODE that gives the same marginal distribution as the reverse SDE at every time step $$t$$:
-$$
-\begin{equation}
-\mathrm{d}{\bf z} = \left[f(t) {\bf z} - \frac{1}{2} g(t)^2 \nabla _{\bf z} \log p_t({\bf z}) \right] \mathrm{d}t.
-\end{equation}
-$$
-Both sampling equations involve estimating the score function that we cana parametrize as a score network $$\hat{\bf s} = \hat{\bf s}({\bf z}_t; t)$$, but we don't have access to the ground truth score to use as the target during training. Thankfully, we observe that $$\nabla _{\bf z} \log p_t({\bf z}) = \mathbb{E}_{p({\bf x} | {\bf z}_t)}\left[  \log p({\bf z}_t | {\bf x}) \right]$$. Therefore, we can instead use the conditioinal score $$\nabla _{\bf z}\log p({\bf z}_t | {\bf x}) = - {\boldsymbol \epsilon} / \sigma_t$$ as the target of the score network, and one can show that minimizing a mean squared error loss with the conditional score is equivalent to miminizing the same loss with the marginal score in expectation.
+Note that we have introduced an additional parameter $\eta_t$ which controls the amount of stochasticity at inference time. When discretizing \eqref{eq:backward_process} we recover DDIM in the case $\eta_t = 0$ and DDPM in the case $\eta_t = 1$.
+<div style="background-color: lightyellow; padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
+  Diffusion model frameworks are entirely determined by three hyperparameters  
+  <p>1. $f_t$ which controls how much we forget the original data in the forward process. </p>
+  <p>2. $g_t$ which controls how much noise we input into the samples in the forward process. </p>
+  <p>3. $\eta_t$ which controls the amount of stochasticity at inference time. </p>
+</div>
 
 
-### How to relate these two models?
-
-As, we have seen flow matching depends on three parameters $\alpha_t$, $\sigma_t$, $\varepsilon_t$ and diffusion models depend on three parameters as well $f_t$, $g_t$, $\eta_t$. In this section, we are going to show that one can define a one-to-one mapping between those quantities so that flow matching and diffusion models define exactly the same model. 
-
-First, we notice that diffusion models define an interpolant using ...
-
-Hence, if we want to make the two models identical we need to set $A_t = \alpha_t$ and $S_t = \sigma_t$. 
-This will give us a relation between $f_t, g_t$ and $\alpha_t, \sigma_t$. 
-
-We get the following relationship
-
-$$
-f_t = \partial_t \log(\alpha_t) , \qquad g_t = (2 \alpha_t \sigma_t \partial_t (\sigma_t / \alpha_t))^{1/2} .
-$$
-
-At this stage, we have found a way to define a forward SDE in a diffusion model framework that yields an interpolant defined by flow matching using ... Similarly, using ... we can define an interpolant in the flow matching framework given a forward SDE given by a diffusion model.
-
-So far, we have shown that by defining a relationship between $f_t, g_t$ and $\alpha_t, \sigma_t$ we can define the same interpolant and forward noising process in both the flow matching and the diffusion model frameworks. 
-
-However, one question remains, do the generative SDEs coincides? Recall that the general generative SDE is given by ... in the flow matching framework and by ... in the diffusion model framework. 
-
-Let's have a look at the coefficients in front of the Brownian motion in both cases. In the flow matching setting, we have $\varepsilon_{1-t}$ and in the diffusion model setting we have $\eta_{1-t} g_{1-t}$. This suggests to set 
-
-$$
-\varepsilon_t = \eta_t g_t . 
-$$
-
-Sure, this makes the coefficients in front of the  Brownian motion equal but what about the drift terms?
-Well, it turns out that with the relationships ... and ... they are also equal and therefore the dynamics are identical!
-
-This is the content of the following theorem
-
-...
-
-To summarize, given $\alpha_t$, $\sigma_t$ and $\varepsilon_t$ defining a flow matching framework, we can get an equivalent diffusion model framework by defining 
-
-$$
-f_t = \partial_t \log(\alpha_t) , \qquad g_t = 2 \alpha_t sgima_t \partial_t (\sigma_t / \alpha_t) , \qquad \eta_t = \varepsilon_t / [2 \alpha_t sgima_t \partial_t (\sigma_t / \alpha_t)]
-$$
-
-Similarly, given $f_t$, $g_t$ and $\eta_t$ defining a diffusion model framework, we can get an equivalent flow matching framework by defining 
-
-$$
-\alpha_t = \exp[\int_0^t f_s \mathrm{d}s] , \qquad \sigma_t = (\int_0^t g_s^2 \exp[-2\int_0^s f_u \mathrm{d}u] \mathrm{d} s)^{1/2} , \qquad \varepsilon_t = \eta_t g_t . 
-$$
 
