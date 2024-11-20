@@ -229,14 +229,14 @@ $$
 \label{eq:forward_process}
 \end{equation}
 $$
-Hence, the free parameters are given by $f_t$ and $g_t$. From the diffusion model perspective, the generative process is given by the backward of \eqref{eq:forward_process}, i.e.
+Hence, the free parameters are given by $f_t$ and $g_t$. From the diffusion model perspective, the generative process is given by the backward of the forward process, i.e.
 $$
 \begin{equation}
 \mathrm{d} {\bf z}_t = (f_t {\bf z}_t + \frac{1+ \eta_t^2}{2}g_t^2 \nabla \log p_t({\bf z_t}) ) \mathrm{d} t + \eta_t g_t \mathrm{d} {\bf z} .
 \label{eq:backward_process}
 \end{equation}
 $$
-Note that we have introduced an additional parameter $\eta_t$ which controls the amount of stochasticity at inference time. When discretizing \eqref{eq:backward_process} we recover DDIM in the case $\eta_t = 0$ and DDPM in the case $\eta_t = 1$.
+Note that we have introduced an additional parameter $\eta_t$ which controls the amount of stochasticity at inference time. When discretizing the backward process we recover DDIM in the case $\eta_t = 0$ and DDPM in the case $\eta_t = 1$.
 <div style="background-color: lightyellow; padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
   Diffusion model frameworks are entirely determined by three hyperparameters  
   <p>1. $f_t$ which controls how much we forget the original data in the forward process. </p>
