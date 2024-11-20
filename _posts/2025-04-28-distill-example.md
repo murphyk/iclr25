@@ -217,7 +217,7 @@ In fact, performing one DDPM sampling step going from $\lambda_t$ to $\lambda_t 
   <iframe src="{{ 'assets/html/2025-04-28-distill-example/interactive_alpha_sigma.html' | relative_url }}" frameborder='0' scrolling='no' height="600px" width="100%"></iframe>
 </div>
 
-Here we ran different samplers for 100 sampling steps using a cosine noise schedule and v-prediction [insert citation to progressive distillation paper]. Ignoring nonlinear interactions, the final sample produced by the sampler can be written as a weighted sum of predictions made during sampling and noise. The weights of these predictions are shown on the y-axis for different diffusion times shown on the x-axis. DDIM results in an equal weighting of v-predictions for this setting, as shown by Salimans & Ho, whereas DDPM puts more emphasis on predictions made towards the end of sampling. Also see [DPM++ solver] for analytic expressions of these weights in the x and $\eps$ parameterizations.
+Here we ran different samplers for 100 sampling steps using a cosine noise schedule and v-prediction [insert citation to progressive distillation paper]. Ignoring nonlinear interactions, the final sample produced by the sampler can be written as a weighted sum of predictions made during sampling and noise. The weights of these predictions are shown on the y-axis for different diffusion times shown on the x-axis. DDIM results in an equal weighting of v-predictions for this setting, as shown by Salimans & Ho, whereas DDPM puts more emphasis on predictions made towards the end of sampling. Also see [DPM++ solver] for analytic expressions of these weights in the x and $\epsilon$ parameterizations.
 
 ## From Diffusion Models to Flow Matching and back
 
