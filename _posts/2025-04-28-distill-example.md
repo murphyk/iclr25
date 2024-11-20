@@ -211,12 +211,13 @@ For each individual sample, the two updates are very different. The reverse DDIM
 <!-- The formal proof requires some manipulation of Fokker-Planck equation <d-cite key="song2020score"></d-cite>.  -->
 <!-- The drift update is about stretching or flattening the distribution, whereas the diffusion update is about smoothing or reducing the curvature of the distribution.   -->
 
-<<<<<<< HEAD
-In fact, performing one DDPM sampling step going from $\lambda_t$ to $\lambda_t + \Delta\lambda$ is equivalent to performing one DDIM sampling step to $\lambda_t + 2\Delta\lambda$, and then renoising to $\lambda_t + \Delta\lambda$ by doing forward diffusion (Emiel, do you want to write this out in detail somewhere?). DDPM thus reverses exactly half the progress made by DDIM, in terms of the log signal-to-noise ratio. However, the fraction of the DDIM step to undo by renoising is a hyperparameter which we are free to choose, and which has been called the level of _churn_ by [Insert citation to EDM paper]. The effect of adding churn to our sampler is to diminish the effect on our final sample of our model predictions made early during sampling, and to increase the weight on later predictions. This is shown in the Figure below
+In fact, performing one DDPM sampling step going from $\lambda_t$ to $\lambda_t + \Delta\lambda$ is exactly equivalent to performing one DDIM sampling step to $\lambda_t + 2\Delta\lambda$, and then renoising to $\lambda_t + \Delta\lambda$ by doing forward diffusion. DDPM thus reverses exactly the progress made by DDIM in terms of the log signal-to-noise ratio. However, the fraction of the DDIM step to undo by renoising is a hyperparameter which we are free to choose, and which has been called the level of _churn_ by [Insert citation to EDM paper]. The effect of adding churn to our sampler is to diminish the effect on our final sample of our model predictions made early during sampling, and to increase the weight on later predictions. This is shown in the Figure below
 
-{% include figure.html path="assets/img/ddim_vs_ddpm.png" class="img-fluid" %}
+<div class="l-page">
+  <iframe src="{{ 'assets/html/2025-04-28-distill-example/interactive_alpha_sigma.html' | relative_url }}" frameborder='0' scrolling='no' height="600px" width="100%"></iframe>
+</div>
 
-Todo: replace this figure with an interactive version with a slider on the level of churn.
+Here we ran different samplers for 100 sampling steps using a cosine noise schedule and v-prediction [insert citation to progressive distillation paper]. Ignoring nonlinear interactions, the final sample produced by the sampler can be written as a weighted sum of predictions made during sampling and noise. The weights of these predictions are shown on the y-axis for different diffusion times shown on the x-axis. DDIM results in an equal weighting of v-predictions for this setting, as shown by Salimans & Ho, whereas DDPM puts more emphasis on predictions made towards the end of sampling. Also see [DPM++ solver] for analytic expressions of these weights in the x and $\eps$ parameterizations.
 
 ## From Diffusion Models to Flow Matching and back
 
