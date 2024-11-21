@@ -147,7 +147,7 @@ $$
 \mathcal{L}(\mathbf{x}) = \mathbb{E}_{t \sim \mathcal{U}(0,1), \boldsymbol{\epsilon} \sim \mathcal{N}(0, \mathbf{I})} \left[ \textcolor{green}{w(\lambda_t)} \cdot \frac{\mathrm{d}\lambda}{\mathrm{d}t} \cdot \lVert\hat{\bf x} - {\bf x}\rVert_2^2 \right],
 \end{equation}
 $$
-where $$\lambda_t$$ is the log signal-to-noise ratio, and $$\textcolor{green}{w(\lambda_t)}$$ is the **weighting function**, balancing the importance of the loss at different noise levels. The term $$\mathrm{d}\lambda / {\mathrm{d}t}$$ in the training objective seems unnatural and one may wonder why it is not merged with the weighting function. This term helps *disentangle* the factors of noise schedule and weighting function clearly, and makes only one of them matter.  
+where $$\lambda_t$$ is the log signal-to-noise ratio, and $$\textcolor{green}{w(\lambda_t)}$$ is the **weighting function**, balancing the importance of the loss at different noise levels. The term $$\mathrm{d}\lambda / {\mathrm{d}t}$$ in the training objective seems unnatural and in literature is often merged with the weighting function. However, their separation helps *disentangle* the factors of noise schedule and weighting function clearly, and helps emphasize the more important weighting components.  
 
 Flow matching also fits in the this training objective, recall the conditional flow matching objective used by <d-cite key="lipman2022flow, liu2022flow"></d-cite> is
 
@@ -161,14 +161,13 @@ Since $$\hat{\bf u} = \hat{\bf x} - \hat{\boldsymbol{\epsilon}} = \hat{\bf x} - 
 
 
 ### What's the weight?
-
-Weighting function balances the importance of different noise levels during training. For perceptual signals such as images in the pixel space, it effectively balances the importance of high frequency and low frequency components.  **(TODO, making a figure to illustrate weighting function versus frequency components.)** This is crucial for modeling perceptual signals such as images, videos and audios, as certain high frequency components in those signals are not visible to human perception, and thus better not to waste model capacity on them. We want to highlight one fact:
+The weighting is the most important part of the loss, it balances the importance of high frequency and low frequency components.  **(TODO, making a figure to illustrate weighting function versus frequency components.)** 
+This is important when modeling images, videos and audios, as certain high frequency components in those signals are not visible to human perception, and thus better not to waste model capacity on them. Viewing losses via their weighting, one can derive that:
 
 <div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
   <p>For weighting functions,</p>
-  <p align="center" style="margin: 0;"><em>Flow matching == diffusion models with ${\bf v}$-MSE loss + cosine noise schedule.</em></p>
+  <p align="center" style="margin: 0;"><em>Flow matching weighting == diffusion weighting of ${\bf v}$-MSE loss + cosine noise schedule.</em></p>
 </div>
-
 
 See Appendix D.2-3 in <d-cite key="kingma2024understanding"></d-cite> for a detailed derivation. Figure **TODO** plots several commonly used weighting functions in the literature. 
 
