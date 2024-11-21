@@ -79,7 +79,7 @@ To give an example, you may assume that flow matching sampling has to be determi
 In this blog post, we take the most commonly<d-footnote>We focus on Gaussian flow matching with the optimal transport flow path.</d-footnote> used flow matching case <d-cite key="lipman2022flow"></d-cite>, also very related to <d-cite key="liu2022flow"></d-cite> and <d-cite key="albergo2023stochastic"></d-cite>. Our purpose is not to downweigh the importance of either framework. In fact, both frameworks are important and are derived from distinct theoretical perspectives. It is even more encouraging that they lead to the same algorithm in practice. The goal of this post is to make the practitioner feel comfortable to use the two frameworks interchangeably, understand the actual degrees of freedom we have when tuning the algorithm (no matter how we name it).
 
 
-## Overview
+## Same forward process
 
 We start by recalling the two frameworks (diffusion models and flow matching). We compare them from a high level and will see that the *process* is the same.
 <!-- We highlight the free parameters in each framework and how they relate to each other. 
