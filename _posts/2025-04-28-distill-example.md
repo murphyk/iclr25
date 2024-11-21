@@ -64,15 +64,18 @@ _styles: >
 {% include figure.html path="assets/img/2025-04-28-distill-example/twotrees.jpg" class="img-fluid" %}
 
 
-Diffusion models and flow matching have emerged as powerful frameworks in generative modeling. In particular, flow matching has gained inreasing popularity recently, due to its simplicity in formulation and "straightness" in the sampling trajectories. A common question one hears nowadays is: 
+Flow matching is becoming popular, due to its simplicity in formulation and "straightness" in the sampling trajectories. A common question one hears nowadays is: 
 
 
 <!-- > Does this diffusion technique also work with Gaussian flow matching? -->
 <p align="center"><i>"Does this diffusion technique also work with flow matching?"</i></p>
 
-Clearly, there is confusion in the field. As we will see later, a diffusion model and a Gaussian flow matching are nearly equivalent. Therefore, the answer to this question is yes, affirmatively.
 
-In this blog post, we will walk through the frameworks of diffusion model and flow matching systematically from the practical perspective. We mainly focus on Gaussian flow matching with the optimal transport flow path <d-cite key="lipman2022flow"></d-cite>, the dominant version of flow matching adopted by the generative modeling field. Other closely related frameworks include rectified flow <d-cite key="liu2022flow"></d-cite> and stochastic interpolant <d-cite key="albergo2023stochastic"></d-cite>. Our purpose is not to downweigh the importance of either framework. In fact, it is interesting to see that two frameworks derived from distinct theoretical perspectives lead to the same algorithm in practice. Rather, we hope to make practitioner feel comfortable to use the two frameworks interchangeably, understand the actual degrees of freedom we have when tuning the algorithm (no matter how we name it), and what design choices actually do not matter.
+What exactly are the differences between these two approaches? As we will see, diffusion modelling and Gaussian flow matching are nearly the same. So the answer to this question is "yes", unless the matching is not to a Gaussian. 
+
+
+
+In this blog post, we take the most commonly used flow matching case<d-footnote>We focus on Gaussian flow matching with the optimal transport flow path. </d-footnote> <d-cite key="lipman2022flow"></d-cite>. Other closely related works are rectified flow <d-cite key="liu2022flow"></d-cite> and stochastic interpolant <d-cite key="albergo2023stochastic"></d-cite>. Our purpose is not to downweigh the importance of either framework. In fact, it is interesting to see that two frameworks derived from distinct theoretical perspectives lead to the same algorithm in practice. The goal of this post is to make the practitioner feel comfortable to use the two frameworks interchangeably, understand the actual degrees of freedom we have when tuning the algorithm (no matter how we name it), and what design choices do not matter.
 
 
 ## Overview
