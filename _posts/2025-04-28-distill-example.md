@@ -208,7 +208,7 @@ The noise schedule of flow matching is in a very simple form: $$\alpha_t = t, \s
 
 ## Sampling and Straightness Misnomer
 
-<!-- <p align="center"><i>"Flow matching paths are straight, whereas diffusion paths are curved."</i></p>
+<p align="center"><i>"Flow matching paths are straight, whereas diffusion paths are curved."</i></p>
 
 Sampling from a score model is affected by a number of design choices.
 Let's focus for now on determinsitic sampling where we want to use our trained score model to transform random noise into a datapoint.
@@ -245,10 +245,10 @@ In the graph below you can tune the integration paths yourself.
   <iframe src="{{ 'assets/html/2025-04-28-distill-example/interactive_alpha_sigma.html' | relative_url }}" frameborder='0' scrolling='no' height="600px" width="100%"></iframe>
 </div>
 
-Note also how the paths for DDIM will bend but the final datapoint it ends up predicting remain the same. -->
+Note also how the paths for DDIM will bend but the final datapoint it ends up predicting remain the same.
 
 Thus, we can conclude a few things from determinstic sampling:
-<!-- 1. For DDIM the interpolation between data and noise is irrelevant and always equivalant to flow matching <d-footnote>The variance exploding formulation ($\alpha_t = 1$, $\sigma_t = t$) is also equivalant to DDIM and flow matching.</d-footnote>. -->
+1. For DDIM the interpolation between data and noise is irrelevant and always equivalant to flow matching <d-footnote>The variance exploding formulation ($\alpha_t = 1$, $\sigma_t = t$) is also equivalant to DDIM and flow matching.</d-footnote>.
 2. Flow matching is only straight for a model predicting a single point. For realistic distributions other interpolations can give straighter paths.
 
 
