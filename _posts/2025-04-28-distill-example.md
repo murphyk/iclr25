@@ -247,7 +247,7 @@ In the graph below you can tune the integration paths yourself.
 Note also how the paths for DDIM will bend but the final datapoint it ends up predicting remain the same.
 
 Thus, we can conclude a few things from determinstic sampling:
-1. For DDIM the interpolation between data and noise is irrelevant and always equivalant to flow matching <d-footnote>The variance exploding formulation ($\alpha_t = 1$, $\sigma_t = t$) is also equivalant to DDIM and flow matching.</d-footnote>.
+<!-- 1. For DDIM the interpolation between data and noise is irrelevant and always equivalant to flow matching <d-footnote>The variance exploding formulation ($\alpha_t = 1$, $\sigma_t = t$) is also equivalant to DDIM and flow matching.</d-footnote>. -->
 2. Flow matching is only straight for a model predicting a single point. For realistic distributions other interpolations can give straighter paths.
 
 
