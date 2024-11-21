@@ -64,7 +64,7 @@ _styles: >
 {% include figure.html path="assets/img/2025-04-28-distill-example/twotrees.jpg" class="img-fluid" %}
 
 
-Flow matching is becoming popular, due to its simplicity in formulation and "straightness" in the sampling trajectories. A common question one hears nowadays is: 
+Flow matching is gaining popularity, due to its simplicity in formulation and "straightness" in the sampling trajectories. A common question one hears nowadays is: 
 
 
 <!-- > Does this diffusion technique also work with Gaussian flow matching? -->
@@ -75,7 +75,7 @@ What exactly are the differences between these two approaches? As we will see, d
 
 
 
-In this blog post, we take the most commonly used flow matching case<d-footnote>We focus on Gaussian flow matching with the optimal transport flow path. </d-footnote> <d-cite key="lipman2022flow"></d-cite>. Other closely related works are rectified flow <d-cite key="liu2022flow"></d-cite> and stochastic interpolant <d-cite key="albergo2023stochastic"></d-cite>. Our purpose is not to downweigh the importance of either framework. In fact, it is interesting to see that two frameworks derived from distinct theoretical perspectives lead to the same algorithm in practice. The goal of this post is to make the practitioner feel comfortable to use the two frameworks interchangeably, understand the actual degrees of freedom we have when tuning the algorithm (no matter how we name it), and what design choices do not matter.
+In this blog post, we take the most commonly<d-footnote>We focus on Gaussian flow matching with the optimal transport flow path.</d-footnote> used flow matching case <d-cite key="lipman2022flow"></d-cite>, also very related to <d-cite key="liu2022flow"></d-cite> and <d-cite key="albergo2023stochastic"></d-cite>. Our purpose is not to downweigh the importance of either framework. In fact, it is interesting to see that two frameworks derived from distinct theoretical perspectives lead to the same algorithm in practice. The goal of this post is to make the practitioner feel comfortable to use the two frameworks interchangeably, understand the actual degrees of freedom we have when tuning the algorithm (no matter how we name it), and what design choices do not matter.
 
 
 ## Overview
@@ -87,14 +87,14 @@ In particular, there exists explicit mappings to define a diffusion model from a
 
 ### Diffusion models
 
-A diffusion process gradually destroys an observed data $$ \bf{x} $$ over time $$t$$, by mixing the data with Gaussian noise gradually. Aggregating the added noise over time leads to:
+A diffusion process gradually destroys an observed data $$ \bf{x} $$ over time $$t$$, by mixing the data with Gaussian noise. Summing up this noise over time gives:
 $$
 \begin{equation}
 {\bf z}_t = \alpha_t {\bf x} + \sigma_t {\boldsymbol \epsilon}, \;\mathrm{where} \; {\boldsymbol \epsilon} \sim \mathcal{N}(0, {\bf I}).
 \label{eq:forward}
 \end{equation}
 $$
-$$\alpha_t$$ and $$\sigma_t$$ define the **noise schedule**. A useful notation is the log signal-to-noise ratio $$\lambda_t = \log(\alpha_t^2 / \sigma_t^2)$$, which monotonically decreases as $$t$$ increases from $$0$$ to $$1$$ (i.e., goes from clean data to Gaussian noise). 
+$$\alpha_t$$ and $$\sigma_t$$ define the **noise schedule**. A useful notation is the log signal-to-noise ratio $$\lambda_t = \log(\alpha_t^2 / \sigma_t^2)$$, which monotonically decreases as $$t$$ increases from $$0$$ (clean data) to $$1$$ (Gaussian noise).
 
 To generate new samples, we can "reverse" the forward process gradually: Initialize the sample from Gaussian at the highest noise level. Given the sample $${\bf z}_t$$ at time step $$t$$, we predict what the clean sample might look like with a neural network $$\hat{\bf x} = \hat{\bf x}({\bf z}_t; t)$$, and then we project it back to a lower noise level with the same forward transformation:
 
@@ -104,10 +104,17 @@ $$
 \end{eqnarray}
 $$
 where $$\hat{\boldsymbol \epsilon} = ({\bf z}_t - \alpha_t \hat{\bf x}) / \sigma_t$$. We keep alternating between predicting the clean data, and projecting it back to a lower noise level until we get the clean sample.
-This is the DDIM sampler <d-cite key="song2020denoising"></d-cite>. The randomness of samples only comes from the initial Gaussian sample, and the entire reverse process is deterministic. In the sampling session we will discuss other variants of diffusion samplers. 
+This is the DDIM sampler <d-cite key="song2020denoising"></d-cite>. The randomness of samples only comes from the initial Gaussian sample, and the entire reverse process is deterministic. 
 
 ### Flow matching
-Flow Matching (also known as rectified flow, or a special case of stochastic interpolant) provides another perspective of the forward process: we view it directly as an interpolation between the data $${\bf x}$$ and the Gaussian noise $$\boldsymbol \epsilon$$. In the more general case, it can be an interpolation of two arbitrary distributions. The forward process is further simplified as $${\bf z}_t = t {\bf x} + (1-t) {\boldsymbol \epsilon}$$. The evolvement of $${\bf z}_t$$ over time can be expressed as $${\bf z}_t = {\bf z}_{t - \Delta t} + ({\bf x} - {\boldsymbol \epsilon}) \Delta t$$, where $${\bf x} - {\bf \epsilon}$$ is the "velocity", "flow", or "vector field". For sampling, we simply do time reversal, and replace the vector field with our best guess at time step $$t$$ given $${\bf z}_t$$ (since we do not have access to $${\bf x}$$ during sampling):
+Flow Matching provides another perspective of the forward process: we view it directly as an interpolation between the data $${\bf x}$$ and the Gaussian noise $$\boldsymbol \epsilon$$. In the more general case, $$\boldsymbol \epsilon$$ can also be sampled from an arbitrary distribution. The forward process should look familiar<d-footnote>Try setting $$alpha_t = 1 - t$$ and $$sigma_t = t$$.</d-footnote> to the reader, and is defined as:
+$$
+\begin{eqnarray}
+{\bf z}_t = t {\bf x} + (1-t) {\boldsymbol \epsilon}.\\
+\end{eqnarray}
+$$
+
+The flow of $${\bf z}_t$$ can be expressed as $${\bf z}_t = {\bf z}_{t - \Delta t} + ({\bf x} - {\boldsymbol \epsilon}) \Delta t$$, where $${\bf x} - {\bf \epsilon}$$ is the "velocity", "flow", or "vector field". For sampling, we reverse terms and replace the vector field with our best guess $$\hat{\bf x}$$ at time step $$t$$ given $${\bf z}_t$$ (since we do not have access to $${\bf x}$$ during sampling):
 
 $$
 \begin{eqnarray}
@@ -122,7 +129,7 @@ So far we can already sense the similar flavors of the two frameworks:
 
 <div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
   <p>1. <strong>Same forward process</strong>: assume that one end of flow matching is Gaussian, and the noise schedule of diffusion models is in a particular form. </p>
-  <p  style="margin: 0;">2. <strong>"Similar" sampling processes</strong>: both follow an iterative update that involves the unknown clean data, which is replaced by the best guess of the clean data at the current time step. (Spoiler: later we will show they are exactly the same!)</p>
+  <p  style="margin: 0;">2. <strong>"Similar" sampling processes</strong>: both follow an iterative update that a guess of the clean data at the current time step. (Spoiler: later we will show they are exactly the same!)</p>
 </div>
 
 
