@@ -136,12 +136,6 @@ So far we can already sense the similar flavors of the two frameworks:
 
 ## Sampling and Straightness Misnomer
 
-<div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
-  <!-- <p>For weighting functions,</p> -->
-  <p align="center" style="margin: 0;"><em>Diffusion with DDIM sampling == Flow matching sampling (Euler).</em></p>
-</div>
-
-
 Deterministic sampling is simpler, let's focus on that first. Imageine you want to use your trained denoiser model to transform random noise into a datapoint.
 
 In both frameworks deterministic sampling comes down to integrating an ODE. One of the choice we have, is the numerical method to compute the ODE. A famous inegrator is the DDIM sampler, which analyically integrates the sampling ODE for a *constant* prediction from your network. Of course the network prediction is not constant, but if the stepsize is small enough one hopes it suffices. We have seen this sampler in the introduction section before and it is:
@@ -156,16 +150,14 @@ What's special about DDIM is that it is insensitive to rescalings of $\alpha_t$ 
 
 An interesting special case is the standard flow matching interpolation ($\alpha_t = 1. - t$, $\sigma_t = t$). In this case Euler integration (used by flow matching) is exactly the same as DDIM.
 
-
+<div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
+  <!-- <p>For weighting functions,</p> -->
+  <p align="center" style="margin: 0;"><em>Diffusion with DDIM sampling == Flow matching sampling (Euler).</em></p>
+</div>
 
 Check it out for yourself below: DDIM always gives the same samples no matter the schedule, which is also the same as flow matching.
 <div class="l-page">
   <iframe src="{{ 'assets/html/2025-04-28-distill-example/interactive_alpha_sigma.html' | relative_url }}" frameborder='0' scrolling='no' height="600px" width="100%"></iframe>
-</div>
-
-<div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
-  <!-- <p>For weighting functions,</p> -->
-  <p align="center" style="margin: 0;"><em>Straight to a point != Straight to a distribution.</em></p>
 </div>
 
 <p align="center"><i>"Flow matching paths are straight, whereas diffusion paths are curved."</i></p>
@@ -177,6 +169,13 @@ If the model would be perfectly confident about the data point it is moving to, 
 Straight lined ODEs would be great because it means that there is no integration error whatsover.
 Unfortanely, the predictions are not for a single point. Instead they average over a larger distribution.
 In this case, there is no garantuee that the flow matching formulation or DDIM integration leads to less error.
+
+<div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
+  <!-- <p>For weighting functions,</p> -->
+  <p align="center" style="margin: 0;"><em>Straight to a point != Straight to a distribution.</em></p>
+</div>
+
+
 In fact, in the interactive graph below we can see that the variance preserving formulation is optimal if the model prediction has a variance of $1$:
 
 <div class="l-page">
@@ -186,12 +185,9 @@ In fact, in the interactive graph below we can see that the variance preserving 
 
 Finding such straight paths for real-life datasets like images is of course much less straightforward. But the conclusion remains the same: The optimal integration method depends on the data and the models prediction.
 
-In the graph below you can tune the integration paths yourself.
 
 
-Note also how the paths for DDIM will bend but the final datapoint it ends up predicting remain the same.
-
-Thus, we can conclude a few things from determinstic sampling:
+There are two important things from determinstic sampling:
 1. For DDIM the interpolation between data and noise is irrelevant and always equivalant to flow matching <d-footnote>The variance exploding formulation ($\alpha_t = 1$, $\sigma_t = t$) is also equivalant to DDIM and flow matching.</d-footnote>.
 2. Flow matching is only straight for a model predicting a single point. For realistic distributions other interpolations can give straighter paths.
 
