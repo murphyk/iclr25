@@ -133,11 +133,15 @@ So far we can already sense the similar flavors of the two frameworks:
 </div>
 
 
+If the process is the same, what about the training objective?
+
 ## Training 
 
 <!-- For training, a neural network is estimated to predict $$\hat{\boldsymbol \epsilon} = \hat{\boldsymbol \epsilon}({\bf z}_t; t)$$ that effectively estimates $${\mathbb E} [{\boldsymbol \epsilon} \vert {\bf z}_t]$$, the expected noise added to the data given the noisy sample. Other **model outputs** have been proposed in the literature which are linear combinations of $$\hat{\boldsymbol \epsilon}$$ and $${\bf z}_t$$, and $$\hat{\boldsymbol \epsilon}$$ can be derived from the model output given $${\bf z}_t$$.  -->
 
-In the previous section we have seen that the process is the same, but what about the <i>training objective</i>. For diffusion models, <d-cite key="kingma2024understanding"></d-cite> summarize the training as estimating a neural network to predict $$\hat{\bf x} = \hat{\bf x}({\bf z}_t; t)$$, or a linear combination of $$\hat{\bf x}$$ and $${\bf z}_t$$<d-footnote>It take a little bit of effort to show that indeed you only need linear combinations to define model outputs such as $$\hat{\boldsymbol{\epsilon}}$$, $$\hat{\bf v}$$ and $$\hat{\bf u}$$ (from flow matching)</d-footnote>. Learning the model is done by minimizing a weighted mean squared error (MSE) loss:
+For diffusion models, <d-cite key="kingma2024understanding"></d-cite> summarize the training as estimating a neural network to predict $$\hat{\bf x} = \hat{\bf x}({\bf z}_t; t)$$, or a linear combination of $$\hat{\bf x}$$ and $${\bf z}_t$$
+<!-- <d-footnote>It take a little bit of effort to show that indeed you only need linear combinations to define model outputs such as $$\hat{\boldsymbol{\epsilon}}$$, $$\hat{\bf v}$$ and $$\hat{\bf u}$$ (from flow matching)</d-footnote>. -->
+Learning the model is done by minimizing a weighted mean squared error (MSE) loss:
 $$
 \begin{equation}
 \mathcal{L}(\mathbf{x}) = \mathbb{E}_{t \sim \mathcal{U}(0,1), \boldsymbol{\epsilon} \sim \mathcal{N}(0, \mathbf{I})} \left[ \textcolor{green}{w(\lambda_t)} \cdot \frac{\mathrm{d}\lambda}{\mathrm{d}t} \cdot \lVert\hat{\bf x} - {\bf x}\rVert_2^2 \right],
