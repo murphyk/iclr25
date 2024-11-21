@@ -258,6 +258,11 @@ Thus, we can conclude a few things from determinstic sampling:
 
 ### Reflow operator
 
+The Reflow operation in Flow Matching connects noise and data points to sample in a straight line.
+One can obtain these data noise pairs by running a deterministic sampler from noise.
+A model can then be trained to directly predict the data given the noise avoiding the need for sampling.
+In the diffusion literature the same approach was the one of the first distillation techniques <d-cite key="luhman2021knowledge"></d-cite>.
+
 
 
 
