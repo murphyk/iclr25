@@ -138,20 +138,29 @@ So far we can already sense the similar flavors of the two frameworks:
 
 <p align="center"><i>"Flow matching paths are straight, whereas diffusion paths are curved."</i></p>
 
-Sampling from a score model is affected by a number of design choices.
-Let's focus for now on determinsitic sampling where we want to use our trained score model to transform random noise into a datapoint.
+Deterministic sampling is simpler, let's focus on that first. Imageine you want to use your trained denoiser model to transform random noise into a datapoint.
 
-In both frameworks deterministic sampling comes down to integrating an ODE. This ODE however is not unique because we must choose how to interplate between data and noise.
-Once we have an ODE we must also pick a numerical method to compute it. The DDIM method analtyically integrates the sampling ODE for a constant prediction from your score method.
+In both frameworks deterministic sampling comes down to integrating an ODE. One of the choice we have, is the numerical method to compute the ODE. A famous inegrator is the DDIM sampler, which analyically integrates the sampling ODE for a *constant* prediction from your network. Of course the network prediction is not constant, but if the stepsize is small enough one hopes it suffices. We have seen this sampler in the introduction section before and it is:
 
 $$
-DDIM(z_s | z_t) = \alpha_s * \hat{x} + \sigma_s * \hat{\epsilon}
+{\bf z}_{s} &=& \alpha_{s} \hat{\bf x} + \sigma_{s} \hat{\boldsymbol \epsilon},\\
 $$
 
-Others have used the standard Euler method or higher-order methods.
-DDIM has the nice property that the resulting sample is the same whatever choice we make for interpolating data and noise.
-This is generally not the case for euler or higher order integrators.
-However, for the standard flow matching interpolation ($\alpha_t = 1. - t$, $\sigma_t = t$) Euler integration gives exactly the same results as DDIM.
+What's special about DDIM is that it is insensitive to rescalings of $\alpha$ and $\sigma$. No matter whether your schedule is variance preserving, variance exploding or flow matching, it gives the same answer!<d-footnote>You may have to rescale your inputs and outputs of your neural net for this, but it is pretty straightforward.</d-footnote>
+
+Other choices in literature are standard Euler method or higher-order methods, but these are usually sensitive to not important rescaling of $\alpha_t$ and $\sigma_t$.
+
+An interesting special case is the standard flow matching interpolation ($\alpha_t = 1. - t$, $\sigma_t = t$). In this case Euler integration (used by flow matching) is exactly the same as DDIM.
+
+<div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
+  <!-- <p>For weighting functions,</p> -->
+  <p align="center" style="margin: 0;"><em>DDIM sampler == Flow matching interpolation and sampler.</em></p>
+</div>
+
+<div class="l-page">
+  <iframe src="{{ 'assets/html/2025-04-28-distill-example/interactive_alpha_sigma.html' | relative_url }}" frameborder='0' scrolling='no' height="600px" width="100%"></iframe>
+</div>
+
 
 So why is the flow matching paramterization said to result in straighter sampling paths?
 When the model is perfectly confident about the data point it is moving towards, the path from noise to data will be a straight line.
@@ -169,9 +178,6 @@ Finding such straight paths for real-life datasets like images is of course much
 
 In the graph below you can tune the integration paths yourself.
 
-<div class="l-page">
-  <iframe src="{{ 'assets/html/2025-04-28-distill-example/interactive_alpha_sigma.html' | relative_url }}" frameborder='0' scrolling='no' height="600px" width="100%"></iframe>
-</div>
 
 Note also how the paths for DDIM will bend but the final datapoint it ends up predicting remain the same.
 
