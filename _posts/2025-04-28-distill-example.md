@@ -163,17 +163,21 @@ Check it out for yourself below: DDIM always gives the same samples no matter th
   <iframe src="{{ 'assets/html/2025-04-28-distill-example/interactive_alpha_sigma.html' | relative_url }}" frameborder='0' scrolling='no' height="600px" width="100%"></iframe>
 </div>
 
+<div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
+  <!-- <p>For weighting functions,</p> -->
+  <p align="center" style="margin: 0;"><em>Straight to a point != Straight to a distribution.</em></p>
+</div>
 
 <p align="center"><i>"Flow matching paths are straight, whereas diffusion paths are curved."</i></p>
 
-Wait? The flow matching schedule is said to result in straighter paths, but in the above figure its sampling trajectories look arguably *more curved*.
+Wait? The flow matching schedule is said to result in straighter paths, but in the above figure its sampling trajectories look *curved*.
 
 So why is the flow matching paramterization said to result in straighter sampling paths?
-If the model would be perfectly confident about the data point it is moving to, the path from noise to data will be a straight line with flow matching.
-Straight lined ODEs are great because it means that there is no integration error whatsover.
-Unfortanely, typical score models are not modelling a single point. Instead they predict the average over a larger distribution.
+If the model would be perfectly confident about the data point it is moving to, the path from noise to data will be a straight line with the flow matching schedule.
+Straight lined ODEs would be great because it means that there is no integration error whatsover.
+Unfortanely, the predictions are not for a single point. Instead they average over a larger distribution.
 In this case, there is no garantuee that the flow matching formulation or DDIM integration leads to less error.
-In fact, in the interactive graph below we can see that the variance preserving formulation is optimal if the model prediction has a variance of $1$.
+In fact, in the interactive graph below we can see that the variance preserving formulation is optimal if the model prediction has a variance of $1$:
 
 <div class="l-page">
   <iframe src="{{ 'assets/html/2025-04-28-distill-example/interactive_vp_vs_flow.html' | relative_url }}" frameborder='0' scrolling='no' height="600px" width="100%"></iframe>
