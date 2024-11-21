@@ -107,7 +107,7 @@ where $$\hat{\boldsymbol \epsilon} = ({\bf z}_t - \alpha_t \hat{\bf x}) / \sigma
 This is the DDIM sampler <d-cite key="song2020denoising"></d-cite>. The randomness of samples only comes from the initial Gaussian sample, and the entire reverse process is deterministic. 
 
 ### Flow matching
-Flow Matching provides another perspective of the forward process: we view it directly as an interpolation between the data $${\bf x}$$ and the Gaussian noise $$\boldsymbol \epsilon$$. In the more general case, $$\boldsymbol \epsilon$$ can also be sampled from an arbitrary distribution. The forward process should look familiar<d-footnote>Try setting $$alpha_t = 1 - t$$ and $$sigma_t = t$$.</d-footnote> to the reader, and is defined as:
+Flow Matching provides another perspective of the forward process: we view it directly as an interpolation between the data $${\bf x}$$ and the Gaussian noise $$\boldsymbol \epsilon$$. In the more general case, $$\boldsymbol \epsilon$$ can also be sampled from an arbitrary distribution. The forward process should look familiar to the reader, and is defined as:
 $$
 \begin{eqnarray}
 {\bf z}_t = t {\bf x} + (1-t) {\boldsymbol \epsilon}.\\
@@ -133,13 +133,13 @@ So far we can already sense the similar flavors of the two frameworks:
 </div>
 
 
-If the process is the same, what about the training objective?
+If the process is the same, what about the training?
 
 ## Training 
 
 <!-- For training, a neural network is estimated to predict $$\hat{\boldsymbol \epsilon} = \hat{\boldsymbol \epsilon}({\bf z}_t; t)$$ that effectively estimates $${\mathbb E} [{\boldsymbol \epsilon} \vert {\bf z}_t]$$, the expected noise added to the data given the noisy sample. Other **model outputs** have been proposed in the literature which are linear combinations of $$\hat{\boldsymbol \epsilon}$$ and $${\bf z}_t$$, and $$\hat{\boldsymbol \epsilon}$$ can be derived from the model output given $${\bf z}_t$$.  -->
 
-For diffusion models, <d-cite key="kingma2024understanding"></d-cite> summarize the training as estimating a neural network to predict $$\hat{\bf x} = \hat{\bf x}({\bf z}_t; t)$$, or a linear combination of $$\hat{\bf x}$$ and $${\bf z}_t$$
+Diffusion models <d-cite key="kingma2024understanding"></d-cite> are trained by estimating $$\hat{\bf x} = \hat{\bf x}({\bf z}_t; t)$$ with a neural net. In practice, one chooses a linear combination of $$\hat{\bf x}$$ and $${\bf z}_t$$ for stability reasons.
 <!-- <d-footnote>It take a little bit of effort to show that indeed you only need linear combinations to define model outputs such as $$\hat{\boldsymbol{\epsilon}}$$, $$\hat{\bf v}$$ and $$\hat{\bf u}$$ (from flow matching)</d-footnote>. -->
 Learning the model is done by minimizing a weighted mean squared error (MSE) loss:
 $$
@@ -147,9 +147,9 @@ $$
 \mathcal{L}(\mathbf{x}) = \mathbb{E}_{t \sim \mathcal{U}(0,1), \boldsymbol{\epsilon} \sim \mathcal{N}(0, \mathbf{I})} \left[ \textcolor{green}{w(\lambda_t)} \cdot \frac{\mathrm{d}\lambda}{\mathrm{d}t} \cdot \lVert\hat{\bf x} - {\bf x}\rVert_2^2 \right],
 \end{equation}
 $$
-where $$\lambda_t$$ is the log signal-to-noise ratio, and $$\textcolor{green}{w(\lambda_t)}$$ is the **weighting function**, balancing the importance of the loss at different noise levels. The term $$\mathrm{d}\lambda / {\mathrm{d}t}$$ in the training objective seems unnatural and one may wonder why not merging it with the weighting function. As we will show below, this term helps *disentangle* the factors of noise schedule and weighting function clearly, and makes only one of them matter.  
+where $$\lambda_t$$ is the log signal-to-noise ratio, and $$\textcolor{green}{w(\lambda_t)}$$ is the **weighting function**, balancing the importance of the loss at different noise levels. The term $$\mathrm{d}\lambda / {\mathrm{d}t}$$ in the training objective seems unnatural and one may wonder why it is not merged with the weighting function. This term helps *disentangle* the factors of noise schedule and weighting function clearly, and makes only one of them matter.  
 
-To see why flow matching also fits in the above training objective, recall the conditional flow matching objective used by <d-cite key="lipman2022flow, liu2022flow"></d-cite> is
+Flow matching also fits in the this training objective, recall the conditional flow matching objective used by <d-cite key="lipman2022flow, liu2022flow"></d-cite> is
 
 $$
 \begin{equation}
@@ -171,11 +171,11 @@ Below we summarize several network outputs proposed in the literature, including
 | $${\bf v}$$-prediction | $$\hat{\bf v} = \alpha_t \hat{\boldsymbol{\epsilon}} - \sigma_t \hat{\bf x} $$      |    $$ \lVert\hat{\bf v} - {\bf v}\rVert_2^2 = \sigma_t^2(e^{-\lambda} + 1)^2 \lVert\hat{\bf x} - {\bf x}\rVert_2^2 $$ |
 | $${\bf u}$$-flow matching vector field | $$\hat{\bf u} = \hat{\bf x} - \hat{\boldsymbol{\epsilon}} $$      |    $$ \lVert\hat{\bf u} - {\bf u}\rVert_2^2 = (1 + e^{\lambda / 2})^2 \lVert\hat{\bf x} - {\bf x}\rVert_2^2 $$ |
 
-In practice, however, the model output might make a difference. Specifically,
-* $${\bf x}$$-prediction can be problematic at low noise levels. One reason is that the input sample at low noise levels is pretty close to the clean data and the optimization problem over $${\bf x}$$-MSE becomes almost trivial. The fine-grained details can be largely ignored by the model. The other reason is that any error in $$\hat{\bf x}$$ will get ampified in $$\hat{\boldsymbol \epsilon} = ({\bf z}_t - \alpha_t \hat{\bf x}) / \sigma_t$$, as $$\sigma_t$$ is close to 0.
-* Following the similar reason, $${\boldsymbol \epsilon}$$-prediction can be problematic at high noise levels, i.e., the model prediction becomes not informative, and the error gets amplified in $$\hat{\bf x}$$.
+In practice, however, the model output might make a difference. For example,
+* $${\bf x}$$-prediction can be problematic at low noise levels, because small changes create a large loss under typical weightings. You can also see in the sampler that any error in $$\hat{\bf x}$$ will get ampified in $$\hat{\boldsymbol \epsilon} = ({\bf z}_t - \alpha_t \hat{\bf x}) / \sigma_t$$, as $$\sigma_t$$ is close to 0.
+* Following the similar reason, $${\boldsymbol \epsilon}$$-prediction is problematic at high noise levels, because $$\hat{\boldsymbol \epsilon}$$ is not informative, and the error gets amplified in $$\hat{\bf x}$$.
 
-Therefore, a heuristic is to choose a network output that is a combination of $${\bf x}$$- and $${\boldsymbol \epsilon}$$-prediction, which applies to the $${\bf v}$$-prediction and flow matching vector field. 
+Therefore, a heuristic is to choose a network output that is a combination of $${\bf x}$$- and $${\boldsymbol \epsilon}$$-prediction, which applies to the $${\bf v}$$-prediction and flow matching vector field $${\bf u} = {\bf x} - {\bf \epsilon}$$.
 
 
 ### Noise schedule
