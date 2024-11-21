@@ -107,7 +107,7 @@ where $$\hat{\boldsymbol \epsilon} = ({\bf z}_t - \alpha_t \hat{\bf x}) / \sigma
 This is the DDIM sampler <d-cite key="song2020denoising"></d-cite>. The randomness of samples only comes from the initial Gaussian sample, and the entire reverse process is deterministic. 
 
 ### Flow matching
-<!-- Flow Matching provides another perspective of the forward process: we view it directly as an interpolation between the data $${\bf x}$$ and the Gaussian noise $$\boldsymbol \epsilon$$. In the more general case, $$\boldsymbol \epsilon$$ can also be sampled from an arbitrary distribution. The forward process should look familiar to the reader, and is defined as:
+Flow Matching provides another perspective of the forward process: we view it directly as an interpolation between the data $${\bf x}$$ and the Gaussian noise $$\boldsymbol \epsilon$$. In the more general case, $$\boldsymbol \epsilon$$ can also be sampled from an arbitrary distribution. The forward process should look familiar to the reader, and is defined as:
 $$
 \begin{eqnarray}
 {\bf z}_t = t {\bf x} + (1-t) {\boldsymbol \epsilon}.\\
@@ -133,7 +133,7 @@ So far we can already sense the similar flavors of the two frameworks:
 </div>
 
 
-If the process is the same, what about the training? -->
+If the process is the same, what about the training?
 
 ## Training (weighting, output, schedule)
 
@@ -160,7 +160,7 @@ $$
 Since $$\hat{\bf u} = \hat{\bf x} - \hat{\boldsymbol{\epsilon}} = \hat{\bf x} - ({\bf z}_t - t \hat{\bf x}) / (1-t)$$ is a linear combination of $$\hat{\bf x}$$ and $${\bf z}_t$$, the CFM training objective can be rewritten as mean squared error on $${\bf x}$$ with a specific weighting. 
 
 
-### What's the weight?
+<!-- ### What's the weight?
 The weighting is the most important part of the loss, it balances the importance of high frequency and low frequency components.  **(TODO, making a figure to illustrate weighting function versus frequency components.)** 
 This is important when modeling images, videos and audios, as certain high frequency components in those signals are not visible to human perception, and thus better not to waste model capacity on them. Viewing losses via their weighting, one can derive that:
 
@@ -194,7 +194,7 @@ In summary, we have the following conclusions for diffusion models / flow matchi
   <p>1. Weighting function <strong> is important for training</strong>. For perceptual signals, it balances the importance of different frequency components. Should tune based on the characteristics of the input data. </p>
   <p>2. Noise schedule <strong>is far less important training objective</strong> and affects the training efficiency.</p>
   <p style="margin: 0;">3. The network output proposed by flow matching nicely balances ${\bf x}$- and ${\epsilon}$-prediction, similar to $$v$$-prediction.</p>
-</div>
+</div> -->
 
 
 ### Noise schedule
@@ -207,7 +207,7 @@ The noise schedule of flow matching is in a very simple form: $$\alpha_t = t, \s
 
 ## Sampling and Straightness Misnomer
 
-<p align="center"><i>"Flow matching paths are straight, whereas diffusion paths are curved."</i></p>
+<!-- <p align="center"><i>"Flow matching paths are straight, whereas diffusion paths are curved."</i></p>
 
 Sampling from a score model is affected by a number of design choices.
 Let's focus for now on determinsitic sampling where we want to use our trained score model to transform random noise into a datapoint.
@@ -244,7 +244,7 @@ In the graph below you can tune the integration paths yourself.
   <iframe src="{{ 'assets/html/2025-04-28-distill-example/interactive_alpha_sigma.html' | relative_url }}" frameborder='0' scrolling='no' height="600px" width="100%"></iframe>
 </div>
 
-Note also how the paths for DDIM will bend but the final datapoint it ends up predicting remain the same.
+Note also how the paths for DDIM will bend but the final datapoint it ends up predicting remain the same. -->
 
 Thus, we can conclude a few things from determinstic sampling:
 <!-- 1. For DDIM the interpolation between data and noise is irrelevant and always equivalant to flow matching <d-footnote>The variance exploding formulation ($\alpha_t = 1$, $\sigma_t = t$) is also equivalant to DDIM and flow matching.</d-footnote>. -->
