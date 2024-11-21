@@ -1,6 +1,6 @@
 ---
 layout: distill
-title: "Diffusion Models and Flow Matching: Two sides of the same coin."
+title: "Diffusion Models and Gaussian Flow Matching: Two sides of the same coin."
 description: "Flow matching and diffusion models are two popular frameworks in generative modeling. Despite seeming similar, there is general confusion in the community about their exact connection. In this post we aim to clear up this confusion and show that <i>diffusion model and Gaussian flow matching are essentially the same</i>: Different model specifications have different noise schedules and loss weighting but correspond to the same generative model. That's great news, it means that you can use the two frameworks interchangeably."
 date: 2025-11-12
 future: true
@@ -71,8 +71,9 @@ Flow matching is gaining popularity, due to its simplicity in formulation and "s
 <p align="center"><i>"Does this diffusion technique also work with flow matching?"</i></p>
 
 
-What exactly are the differences between these two approaches? As we will see, diffusion modelling and Gaussian flow matching are nearly the same. So the answer to this question is "yes", unless the matching is not to a Gaussian. 
+What exactly are the differences between these two approaches? As we will see, diffusion modelling and Gaussian flow matching are nearly the same. So the answer to this question is "yes", unless the matching is not to a Gaussian.
 
+To give an example, you may assume that flow matching sampling has to be deterministic. However, you have trained a general denoiser: stochastic or deterministic sampling, it's up to you!
 
 
 In this blog post, we take the most commonly<d-footnote>We focus on Gaussian flow matching with the optimal transport flow path.</d-footnote> used flow matching case <d-cite key="lipman2022flow"></d-cite>, also very related to <d-cite key="liu2022flow"></d-cite> and <d-cite key="albergo2023stochastic"></d-cite>. Our purpose is not to downweigh the importance of either framework. In fact, it is interesting to see that two frameworks derived from distinct theoretical perspectives lead to the same algorithm in practice. The goal of this post is to make the practitioner feel comfortable to use the two frameworks interchangeably, understand the actual degrees of freedom we have when tuning the algorithm (no matter how we name it), and what design choices do not matter.
@@ -80,7 +81,7 @@ In this blog post, we take the most commonly<d-footnote>We focus on Gaussian flo
 
 ## Overview
 
-We start by recalling the two frameworks (diffusion models and flow matching) and compare them from a high level. 
+We start by recalling the two frameworks (diffusion models and flow matching). We compare them from a high level and will see that the *process* is the same.
 <!-- We highlight the free parameters in each framework and how they relate to each other. 
 In particular, there exists explicit mappings to define a diffusion model from a flow matching model and vice-versa. This overview does not dive into the training of such models, i.e., we assume that all the learnable quantities have been adequatly optimized. We also do not discuss the different sampling techniques used at inference. Both the training and the inference will be discussed in further sections.  -->
 
@@ -162,10 +163,10 @@ Since $$\hat{\bf u} = \hat{\bf x} - \hat{\boldsymbol{\epsilon}} = \hat{\bf x} - 
 
 ### What's the weight?
 The weighting is the most important part of the loss, it balances the importance of high frequency and low frequency components.  **(TODO, making a figure to illustrate weighting function versus frequency components.)** 
-This is important when modeling images, videos and audios, as certain high frequency components in those signals are not visible to human perception, and thus better not to waste model capacity on them. Viewing losses via their weighting, one can derive that:
+This is important when modeling images, videos and audios, as certain high frequency components in those signals are not visible to human perception, and thus better not to waste model capacity on them. Viewing losses via their weighting, one can derive that for example:
 
 <div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
-  <p>For weighting functions,</p>
+  <!-- <p>For weighting functions,</p> -->
   <p align="center" style="margin: 0;"><em>Flow matching weighting == diffusion weighting of ${\bf v}$-MSE loss + cosine noise schedule.</em></p>
 </div>
 
