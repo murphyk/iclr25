@@ -85,7 +85,7 @@ We start by recalling the two frameworks (diffusion models and flow matching) an
 In particular, there exists explicit mappings to define a diffusion model from a flow matching model and vice-versa. This overview does not dive into the training of such models, i.e., we assume that all the learnable quantities have been adequatly optimized. We also do not discuss the different sampling techniques used at inference. Both the training and the inference will be discussed in further sections.  -->
 
 
-<!-- ### Diffusion models
+### Diffusion models
 
 A diffusion process gradually destroys an observed data $$ \bf{x} $$ over time $$t$$, by mixing the data with Gaussian noise. Summing up this noise over time gives:
 $$
@@ -104,10 +104,10 @@ $$
 \end{eqnarray}
 $$
 where $$\hat{\boldsymbol \epsilon} = ({\bf z}_t - \alpha_t \hat{\bf x}) / \sigma_t$$. We keep alternating between predicting the clean data, and projecting it back to a lower noise level until we get the clean sample.
-This is the DDIM sampler <d-cite key="song2020denoising"></d-cite>. The randomness of samples only comes from the initial Gaussian sample, and the entire reverse process is deterministic.  -->
+This is the DDIM sampler <d-cite key="song2020denoising"></d-cite>. The randomness of samples only comes from the initial Gaussian sample, and the entire reverse process is deterministic. 
 
 ### Flow matching
-Flow Matching provides another perspective of the forward process: we view it directly as an interpolation between the data $${\bf x}$$ and the Gaussian noise $$\boldsymbol \epsilon$$. In the more general case, $$\boldsymbol \epsilon$$ can also be sampled from an arbitrary distribution. The forward process should look familiar to the reader, and is defined as:
+<!-- Flow Matching provides another perspective of the forward process: we view it directly as an interpolation between the data $${\bf x}$$ and the Gaussian noise $$\boldsymbol \epsilon$$. In the more general case, $$\boldsymbol \epsilon$$ can also be sampled from an arbitrary distribution. The forward process should look familiar to the reader, and is defined as:
 $$
 \begin{eqnarray}
 {\bf z}_t = t {\bf x} + (1-t) {\boldsymbol \epsilon}.\\
@@ -133,7 +133,7 @@ So far we can already sense the similar flavors of the two frameworks:
 </div>
 
 
-If the process is the same, what about the training?
+If the process is the same, what about the training? -->
 
 ## Training (weighting, output, schedule)
 
