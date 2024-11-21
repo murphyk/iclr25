@@ -202,6 +202,11 @@ In summary, we have the following conclusions for diffusion models / flow matchi
 
 <!-- given $${\bf z}_t$$, these following two updates are equivalent in distribution when $$s$$ is small: -->
 
+<div class="l-page">
+  <iframe src="{{ 'assets/html/2025-04-28-distill-example/interactive_vp_vs_flow.html' | relative_url }}" frameborder='0' scrolling='no' height="600px" width="100%"></iframe>
+</div>
+
+
 ### Deterministic sampler vs. stochastic sampler
 
 So far we mainly cover the deterministic sampler of diffusion models or flow matching. An alternative is to use stochastic samplers such as the DDPM sampler <d-cite key="ho2020denoising"></d-cite>. The key is to realize that, the effect of a small step of DDIM update can be canceled out by a small step of forward diffusion update in distribution. To see why it is true, let's take a look at a 2D example. Starting from the same mixture of Gaussians distribution, we either apply a reverse DDIM update, or a diffusion update:
