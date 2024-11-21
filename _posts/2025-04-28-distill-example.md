@@ -171,14 +171,6 @@ This is important when modeling images, videos and audios, as certain high frequ
 
 See Appendix D.2-3 in <d-cite key="kingma2024understanding"></d-cite> for a detailed derivation. Figure **TODO** plots several commonly used weighting functions in the literature. 
 
-In summary, we have the following conclusions for diffusion models / flow matching training:
-
-<div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
-  <p>1. Weighting function <strong> is important for training</strong>. For perceptual signals, it balances the importance of different frequency components. Should tune based on the characteristics of the input data. </p>
-  <p>2. Noise schedule <strong>does not affect the training objective</strong> and only affects the training efficiency. As long as the endpoints are far enough it should not affect the results dramatically. Can use an adative noise schedule in the literature to speed up training. </p>
-  <p style="margin: 0;">3. The <strong>network output proposed by flow matching is new</strong>. A network output that nicely balances ${\bf x}$- and ${\epsilon}$-prediction is desirable. </p>
-</div>
-
 ### Network output
 Below we summarize several network outputs proposed in the literature, including a few of diffusion models and the one of flow matching. One may see the training objective defined with different network outputs in different papers. From the perspective of training objective, they all correspond to having some additional weighting in front of the $${\bf x}$$-MSE that can be absorbed in the weighting function. 
 
@@ -194,6 +186,15 @@ In practice, however, the model output might make a difference. For example,
 * Following the similar reason, $${\boldsymbol \epsilon}$$-prediction is problematic at high noise levels, because $$\hat{\boldsymbol \epsilon}$$ is not informative, and the error gets amplified in $$\hat{\bf x}$$.
 
 Therefore, a heuristic is to choose a network output that is a combination of $${\bf x}$$- and $${\boldsymbol \epsilon}$$-prediction, which applies to the $${\bf v}$$-prediction and the flow matching vector field $${\bf u} = {\bf x} - {\bf \epsilon}$$.
+
+
+In summary, we have the following conclusions for diffusion models / flow matching training:
+
+<div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
+  <p>1. Weighting function <strong> is important for training</strong>. For perceptual signals, it balances the importance of different frequency components. Should tune based on the characteristics of the input data. </p>
+  <p>2. Noise schedule <strong>is far less important training objective</strong> and affects the training efficiency.</p>
+  <p style="margin: 0;">3. The network output proposed by flow matching nicely balances ${\bf x}$- and ${\epsilon}$-prediction, similar to $$v$$-prediction.</p>
+</div>
 
 
 ### Noise schedule
