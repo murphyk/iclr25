@@ -68,11 +68,11 @@ Diffusion models and flow matching have emerged as powerful frameworks in genera
 
 
 <!-- > Does this diffusion technique also work with Gaussian flow matching? -->
-<p align="center"><i>"Does this diffusion technique also work with Gaussian flow matching?"</i></p>
+<p align="center"><i>"Does this diffusion technique also work with flow matching?"</i></p>
 
-Clearly, there is confusion in the field. After all, a diffusion model and a Gaussian flow matching are essentially equavalent. Therefore, the answer is yes, trivially.
+Clearly, there is confusion in the field. As we will see later, a diffusion model and a Gaussian flow matching are nearly equivalent. Therefore, the answer to this question is yes, affirmatively.
 
-In this blog post, we will walk through the frameworks of diffusion model and flow matching systematically from the practical perspective. We mainly focus on Gaussian flow matching with the optimal transport flow path <d-cite key="lipman2022flow"></d-cite>, the dominant version of flow matching adopted by the field of media generation. Other closely related frameworks include rectified flow <d-cite key="liu2022flow"></d-cite> and stochastic interpolant <d-cite key="albergo2023stochastic"></d-cite>. Our purpose is not to downweigh the importance of either framework. In fact, it is interesting to see that two frameworks derived from distinct theoretical perspectives lead to the same algorithm in practice. Rather, we hope to make practitioner feel comfortable to use the two frameworks interchangeably, understand the actual degrees of freedom we have when tuning the algorithm (no matter how we name it), and what design choices actually do not matter.
+In this blog post, we will walk through the frameworks of diffusion model and flow matching systematically from the practical perspective. We mainly focus on Gaussian flow matching with the optimal transport flow path <d-cite key="lipman2022flow"></d-cite>, the dominant version of flow matching adopted by the generative modeling field. Other closely related frameworks include rectified flow <d-cite key="liu2022flow"></d-cite> and stochastic interpolant <d-cite key="albergo2023stochastic"></d-cite>. Our purpose is not to downweigh the importance of either framework. In fact, it is interesting to see that two frameworks derived from distinct theoretical perspectives lead to the same algorithm in practice. Rather, we hope to make practitioner feel comfortable to use the two frameworks interchangeably, understand the actual degrees of freedom we have when tuning the algorithm (no matter how we name it), and what design choices actually do not matter.
 
 
 ## Overview
@@ -84,7 +84,7 @@ In particular, there exists explicit mappings to define a diffusion model from a
 
 ### Diffusion models
 
-A diffusion process gradually destroys an observed data $$ \bf{x} $$ over time $$t$$, by mixing the data with Gaussian noise:
+A diffusion process gradually destroys an observed data $$ \bf{x} $$ over time $$t$$, by mixing the data with Gaussian noise gradually. Aggregating the added noise over time leads to:
 $$
 \begin{equation}
 {\bf z}_t = \alpha_t {\bf x} + \sigma_t {\boldsymbol \epsilon}, \;\mathrm{where} \; {\boldsymbol \epsilon} \sim \mathcal{N}(0, {\bf I}).
@@ -102,8 +102,9 @@ $$
 $$
 where $$\hat{\boldsymbol \epsilon} = ({\bf z}_t - \alpha_t \hat{\bf x}) / \sigma_t$$. We keep alternating between predicting the clean data, and projecting it back to a lower noise level until we get the clean sample.
 This is the DDIM sampler <d-cite key="song2020denoising"></d-cite>. The randomness of samples only comes from the initial Gaussian sample, and the entire reverse process is deterministic. In the sampling session we will discuss other variants of diffusion samplers. 
+
 ### Flow matching
-Flow Matching (also known as rectified flow, or a special case of stochastic interpolant) provides another perspective of the forward process: Instead of viewing it as gradually adding noise to the clean data, we view it as an interpolation between the data $${\bf x}$$ and the Gaussian noise $$\boldsymbol \epsilon$$. In the more general case, it can be an interpolation of two arbitrary distributions. The forward process is further simplified as $${\bf z}_t = t {\bf x} + (1-t) {\boldsymbol \epsilon}$$. The evolvement of $${\bf z}_t$$ over time can be expressed as $${\bf z}_t = {\bf z}_{t - \Delta t} + ({\bf x} - {\boldsymbol \epsilon}) \Delta t$$, where $${\bf x} - {\bf \epsilon}$$ is the "velocity", "flow", or "vector field". For sampling, we simply do time reversal, and replace the vector field with our best guess at time step $$t$$ given $${\bf z}_t$$ (since we do not have access to $${\bf x}$$ during sampling):
+Flow Matching (also known as rectified flow, or a special case of stochastic interpolant) provides another perspective of the forward process: we view it directly as an interpolation between the data $${\bf x}$$ and the Gaussian noise $$\boldsymbol \epsilon$$. In the more general case, it can be an interpolation of two arbitrary distributions. The forward process is further simplified as $${\bf z}_t = t {\bf x} + (1-t) {\boldsymbol \epsilon}$$. The evolvement of $${\bf z}_t$$ over time can be expressed as $${\bf z}_t = {\bf z}_{t - \Delta t} + ({\bf x} - {\boldsymbol \epsilon}) \Delta t$$, where $${\bf x} - {\bf \epsilon}$$ is the "velocity", "flow", or "vector field". For sampling, we simply do time reversal, and replace the vector field with our best guess at time step $$t$$ given $${\bf z}_t$$ (since we do not have access to $${\bf x}$$ during sampling):
 
 $$
 \begin{eqnarray}
@@ -116,7 +117,7 @@ $$\hat{\bf u} = \hat{\bf u}({\bf z}_t; t) := \hat{\bf x} - \hat{\boldsymbol \eps
 So far we can already sense the similar flavors of the two frameworks:
 
 
-<div style="background-color: lightyellow; padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
+<div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
   <p>1. <strong>Same forward process</strong>: assume that one end of flow matching is Gaussian, and the noise schedule of diffusion models is in a particular form. </p>
   <p  style="margin: 0;">2. <strong>"Similar" sampling processes</strong>: both follow an iterative update that involves the unknown clean data, which is replaced by the best guess of the clean data at the current time step. (Spoiler: later we will show they are exactly the same!)</p>
 </div>
@@ -142,7 +143,7 @@ $$
 \end{equation}
 $$
 
-Since $$\hat{\bf u} = \hat{\bf x} - \hat{\boldsymbol{\epsilon}} = \hat{\bf x} - ({\bf z}_t - \alpha_t \hat{\bf x}) / \sigma_t$$ is a linear combination of $$\hat{\bf x}$$ and $${\bf z}_t$$, the CFM training objective can be rewritten as mean squared error on $${\bf x}$$ with a specific weighting. 
+Since $$\hat{\bf u} = \hat{\bf x} - \hat{\boldsymbol{\epsilon}} = \hat{\bf x} - ({\bf z}_t - t \hat{\bf x}) / (1-t)$$ is a linear combination of $$\hat{\bf x}$$ and $${\bf z}_t$$, the CFM training objective can be rewritten as mean squared error on $${\bf x}$$ with a specific weighting. 
 
 For training there are three design choices that are typically considered in the literature: training noise schedule, network output, and weighting function. There is often confusion in the field about how these choices affect the results and what the tuning recipe one should choose. We will elaborate them below.
 
@@ -172,10 +173,10 @@ The noise schedule of flow matching is in a very simple form: $$\alpha_t = t, \s
 
 ### Weighting function
 
-Weighting function balances the importance of different noise levels during training, and effectively balances the importance of high frequency and low frequency components of the input signal. **(TODO, making a figure to illustrate weighting function versus frequency components.)** This is crucial for modeling perceptual signals such as images, videos and audios, as certain high frequency components in those signals are not visible to human perception, and thus better not to waste model capacity on them. We want to highlight one fact:
+Weighting function balances the importance of different noise levels during training. For perceptual signals such as images in the pixel space, it effectively balances the importance of high frequency and low frequency components.  **(TODO, making a figure to illustrate weighting function versus frequency components.)** This is crucial for modeling perceptual signals such as images, videos and audios, as certain high frequency components in those signals are not visible to human perception, and thus better not to waste model capacity on them. We want to highlight one fact:
 
-<div style="background-color: lightyellow; padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
-  <p>For training objectives,</p>
+<div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
+  <p>For weighting functions,</p>
   <p align="center" style="margin: 0;"><em>Flow matching == diffusion models with ${\bf v}$-MSE loss + cosine noise schedule.</em></p>
 </div>
 
@@ -184,8 +185,8 @@ See Appendix D.2-3 in <d-cite key="kingma2024understanding"></d-cite> for a deta
 
 In summary, we have the following conclusions for diffusion models / flow matching training:
 
-<div style="background-color: lightyellow; padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
-  <p>1. Weighting function <strong>balances the importance of different frequency components in the data</strong>. Should tune based on the characteristics of the input data </p>
+<div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
+  <p>1. Weighting function <strong> is important for training</strong>. For perceptual signals, it balances the importance of different frequency components. Should tune based on the characteristics of the input data. </p>
   <p>2. Noise schedule <strong>does not affect the training objective</strong> and only affects the training efficiency. As long as the endpoints are far enough it should not affect the results dramatically. Can use an adative noise schedule in the literature to speed up training. </p>
   <p style="margin: 0;">3. The <strong>network output proposed by flow matching is new</strong>. A network output that nicely balances ${\bf x}$- and ${\epsilon}$-prediction is desirable. </p>
 </div>
@@ -244,11 +245,11 @@ $$
 
 Note that we have introduced an additional parameter $\eta_t$ which controls the amount of stochasticity at inference time. When discretizing the backward process we recover DDIM in the case $\eta_t = 0$ and DDPM in the case $\eta_t = 1$.
 
-<div style="background-color: lightyellow; padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
+<div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
   Diffusion model frameworks are entirely determined by three hyperparameters  
   <p>1. $f_t$ which controls how much we forget the original data in the forward process. </p>
   <p>2. $g_t$ which controls how much noise we input into the samples in the forward process. </p>
-  <p>3. $\eta_t$ which controls the amount of stochasticity at inference time. </p>
+  <p style="margin: 0;">3. $\eta_t$ which controls the amount of stochasticity at inference time. </p>
 </div>
 
 ### Flow Matching framework hyperparameters
@@ -271,11 +272,11 @@ $$
 
 Note that we have introduced an additional parameter $\varepsilon_t$ which controls the amount of stochasticity at inference time. 
 
-<div style="background-color: lightyellow; padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
+<div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
   Flow matching frameworks are entirely determined by three hyperparameters  
   <p>1. $\alpha_t$ which controls the data component in the interpolation. </p>
   <p>2. $\sigma_t$ which controls the noise component in the interpolation. </p>
-  <p>3. $\varepsilon_t$ which controls the amount of stochasticity at inference time. </p>
+  <p style="margin: 0;">3. $\varepsilon_t$ which controls the amount of stochasticity at inference time. </p>
 </div>
 
 ### Equivalence of the points of view
@@ -283,7 +284,7 @@ Note that we have introduced an additional parameter $\varepsilon_t$ which contr
 Despite their clear similarities it is not immediately clear how to link the diffusion model framework and the flow matching one. 
 Below, we provide formula which provide a one-to-one mapping between the two frameworks. In short:
 
-<div style="background-color: lightyellow; padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
+<div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
   Diffusion model and flow matching are just one change of variable away!
 </div>
 
