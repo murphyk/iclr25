@@ -160,7 +160,7 @@ $$
 Since $$\hat{\bf u} = \hat{\bf x} - \hat{\boldsymbol{\epsilon}} = \hat{\bf x} - ({\bf z}_t - t \hat{\bf x}) / (1-t)$$ is a linear combination of $$\hat{\bf x}$$ and $${\bf z}_t$$, the CFM training objective can be rewritten as mean squared error on $${\bf x}$$ with a specific weighting. 
 
 
-<!-- ### What's the weight?
+### What's the weight?
 The weighting is the most important part of the loss, it balances the importance of high frequency and low frequency components.  **(TODO, making a figure to illustrate weighting function versus frequency components.)** 
 This is important when modeling images, videos and audios, as certain high frequency components in those signals are not visible to human perception, and thus better not to waste model capacity on them. Viewing losses via their weighting, one can derive that:
 
@@ -194,7 +194,7 @@ In summary, we have the following conclusions for diffusion models / flow matchi
   <p>1. Weighting function <strong> is important for training</strong>. For perceptual signals, it balances the importance of different frequency components. Should tune based on the characteristics of the input data. </p>
   <p>2. Noise schedule <strong>is far less important training objective</strong> and affects the training efficiency.</p>
   <p style="margin: 0;">3. The network output proposed by flow matching nicely balances ${\bf x}$- and ${\epsilon}$-prediction, similar to $$v$$-prediction.</p>
-</div> -->
+</div>
 
 
 ### Noise schedule
