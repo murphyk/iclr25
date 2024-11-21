@@ -199,15 +199,56 @@ In summary, we have the following conclusions for diffusion models / flow matchi
 
 <p align="center"><i>"Flow matching paths are straight, whereas diffusion paths are curved."</i></p>
 
-<div class="l-page">
-  <iframe src="{{ 'assets/html/2025-04-28-distill-example/interactive_alpha_sigma.html' | relative_url }}" frameborder='0' scrolling='no' height="600px" width="100%"></iframe>
-</div>
+Sampling from a score model is affected by a number of design choices.
+Let's focus for now on determinsitic sampling where we want to use our trained score model to transform random noise into a datapoint.
 
-<!-- given $${\bf z}_t$$, these following two updates are equivalent in distribution when $$s$$ is small: -->
+In both frameworks deterministic sampling comes down to integrating an ODE. This ODE however is not unique because we must choose how to interplate between data and noise.
+Once we have an ODE we must also pick a numerical method to compute it. The DDIM method analtyically integrates the sampling ODE for a constant prediction from your score method.
+
+$$
+DDIM(z_s | z_t) = \alpha_s * \hat{x} + \sigma_s * \hat{\epsilon}
+$$
+
+Others have used the standard Euler method or higher-order methods.
+DDIM has the nice property that the resulting sample is the same whatever choice we make for interpolating data and noise.
+This is generally not the case for euler or higher order integrators.
+However, for the standard flow matching interpolation ($\alpha_t = 1. - t$, $\sigma_t = t$) Euler integration gives exactly the same results as DDIM.
+
+So why is the flow matching paramterization said to result in straighter sampling paths?
+When the model is perfectly confident about the data point it is moving towards, the path from noise to data will be a straight line.
+Straight lined ODEs are great because it means that there is no integration error whatsover.
+Unfortanely, typical score models are not modelling a single point. Instead they predict the average over a larger distribution.
+In this case, there is no garantuee that the flow matching formulation or DDIM integration leads to less error.
+In fact, in the interactive graph below we can see that the variance preserving formulation is optimal if the model prediction has a variance of $1$.
 
 <div class="l-page">
   <iframe src="{{ 'assets/html/2025-04-28-distill-example/interactive_vp_vs_flow.html' | relative_url }}" frameborder='0' scrolling='no' height="600px" width="100%"></iframe>
 </div>
+
+
+Finding such straight paths for real-life datasets like images is of course much less straightforward. But the conclusion remains the same: The optimal integration method depends on the data and the models prediction.
+
+In the graph below you can tune the integration paths yourself.
+
+<div class="l-page">
+  <iframe src="{{ 'assets/html/2025-04-28-distill-example/interactive_alpha_sigma.html' | relative_url }}" frameborder='0' scrolling='no' height="600px" width="100%"></iframe>
+</div>
+
+Note also how the paths for DDIM will bend but the final datapoint it ends up predicting remain the same.
+
+Thus, we can conclude a few things from determinstic sampling:
+1. For DDIM the interpolation between data and noise is irrelevant and always equivalant to flow matching [^ve_note].
+2. Flow matching is only straight for a model predicting a single point. For realistic distributions other interpolations can give straighter paths.
+
+
+[^ve_note]: The variance exploding formulation ($\alpha_t = 1$, $\sigma_t = t$) is also equivalant to DDIM and flow matching
+<!-- given $${\bf z}_t$$, these following two updates are equivalent in distribution when $$s$$ is small: -->
+
+
+
+### Reflow operator
+
+
 
 
 ### Deterministic sampler vs. stochastic sampler
