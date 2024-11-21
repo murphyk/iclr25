@@ -136,7 +136,11 @@ So far we can already sense the similar flavors of the two frameworks:
 
 ## Sampling and Straightness Misnomer
 
-<p align="center"><i>"Flow matching paths are straight, whereas diffusion paths are curved."</i></p>
+<div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
+  <!-- <p>For weighting functions,</p> -->
+  <p align="center" style="margin: 0;"><em>Diffusion with DDIM sampling == Flow matching sampling (Euler).</em></p>
+</div>
+
 
 Deterministic sampling is simpler, let's focus on that first. Imageine you want to use your trained denoiser model to transform random noise into a datapoint.
 
@@ -146,24 +150,26 @@ $$
 {\bf z}_{s} = \alpha_{s} \hat{\bf x} + \sigma_{s} \hat{\boldsymbol \epsilon},\\
 $$
 
-What's special about DDIM is that it is insensitive to rescalings of $\alpha$ and $\sigma$. No matter whether your schedule is variance preserving, variance exploding or flow matching, it gives the same answer!<d-footnote>You may have to rescale your inputs and outputs of your neural net for this, but it is pretty straightforward.</d-footnote>
+Recall that rescalings of $\alpha_t$ $\sigma_t$ should not matter, instead the important thing is their ratio $\alpha_t / \sigma_t$. 
+What's special about DDIM is that it is insensitive to rescalings of $\alpha_t$ and $\sigma_t$. No matter whether your schedule is variance preserving, variance exploding or flow matching, it gives the same answer!<d-footnote>You may have to rescale your inputs and outputs of your neural net for this, but it is pretty straightforward. Other choices in literature are standard Euler method or higher-order methods, but these give different results with different schedules.</d-footnote>
 
-Other choices in literature are standard Euler method or higher-order methods, but these are usually sensitive to not important rescaling of $\alpha_t$ and $\sigma_t$.
 
 An interesting special case is the standard flow matching interpolation ($\alpha_t = 1. - t$, $\sigma_t = t$). In this case Euler integration (used by flow matching) is exactly the same as DDIM.
 
-<div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
-  <!-- <p>For weighting functions,</p> -->
-  <p align="center" style="margin: 0;"><em>DDIM sampler == Flow matching interpolation and sampler.</em></p>
-</div>
 
+
+Check it out for yourself below: DDIM always gives the same samples no matter the schedule, which is also the same as flow matching.
 <div class="l-page">
   <iframe src="{{ 'assets/html/2025-04-28-distill-example/interactive_alpha_sigma.html' | relative_url }}" frameborder='0' scrolling='no' height="600px" width="100%"></iframe>
 </div>
 
 
+<p align="center"><i>"Flow matching paths are straight, whereas diffusion paths are curved."</i></p>
+
+Wait? The flow matching schedule is said to result in straighter paths, but in the above figure its sampling trajectories look arguably *more curved*.
+
 So why is the flow matching paramterization said to result in straighter sampling paths?
-When the model is perfectly confident about the data point it is moving towards, the path from noise to data will be a straight line.
+If the model would be perfectly confident about the data point it is moving to, the path from noise to data will be a straight line with flow matching.
 Straight lined ODEs are great because it means that there is no integration error whatsover.
 Unfortanely, typical score models are not modelling a single point. Instead they predict the average over a larger distribution.
 In this case, there is no garantuee that the flow matching formulation or DDIM integration leads to less error.
