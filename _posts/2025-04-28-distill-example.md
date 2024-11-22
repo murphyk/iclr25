@@ -342,7 +342,7 @@ $$
 \end{equation}
 $$
 
-where \mathrm{d} {\bf z} is an <em> infinitesimal Gaussian</em> <d-footnote>If you want to  be fancy this is usually referred to as a Brownian motion in the literature. </d-footnote>
+where $$\mathrm{d} {\bf z}$$ is an <em> infinitesimal Gaussian</em> <d-footnote>If you want to  be fancy this is usually referred to as a Brownian motion in the literature. </d-footnote>
 
 Looking at this representation, the free parameters are given by $f_t$ and $g_t$. From the diffusion model perspective, the generative process is given by the reverse of the forward process, whose formula is given by 
 
