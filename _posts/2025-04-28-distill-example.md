@@ -403,7 +403,7 @@ Given a diffusion model framework, i.e. hyperparameters $f_t, g_t, \eta_t$ one c
 
 $$
 \begin{equation}
-\alpha_t = \exp(\int_0^t f_s \mathrm{d}s) , \qquad \sigma_t = (\int_0^t g_s^2 \exp(-2\int_0^s f_u \mathrm{d}u) \mathrm{d} s)^{1/2} , \qquad \varepsilon_t = \eta_t g_t . 
+\alpha_t = \exp\left(\int_0^t f_s \mathrm{d}s\right) , \qquad \sigma_t = \left(\int_0^t g_s^2 \exp\left(-2\int_0^s f_u \mathrm{d}u\right) \mathrm{d} s\right)^{1/2} , \qquad \varepsilon_t = \eta_t g_t . 
 \end{equation}
 $$
 
