@@ -286,8 +286,8 @@ A few remarks about training noise schedule:
 In summary, we have the following conclusions for diffusion models / flow matching training:
 
 <div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
-  <p>1. Weighting function <strong> is important for training</strong>. For perceptual signals, it balances the importance of different frequency components. Should tune based on data characteristics. </p>
-  <p>2. Noise schedule <strong>is far less important to training objective</strong> and affects the training efficiency.</p>
+  <p>1. Weighting function <strong> is important for training</strong>. For perceptual signals, it balances the importance of different frequency components. It should be tuned based on data characteristics. </p>
+  <p>2. Noise schedule <strong>is far less important to the training objective</strong> and affects the training efficiency.</p>
   <p style="margin: 0;">3. The network output proposed by flow matching nicely balances ${\bf x}$- and ${\epsilon}$-prediction, similar to ${\bf v}$-prediction.</p>
 </div>
 
