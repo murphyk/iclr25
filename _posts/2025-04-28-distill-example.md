@@ -192,10 +192,10 @@ Skeptical about 2? Check it out for yourself below: We consider several settings
 
 Wait? The flow matching schedule is said to result in straighter paths, but in the above figure its sampling trajectories look *curved* and the VP paths look *straight*.
 
-So why is the flow matching paramterization said to result in straighter sampling paths?
+So why is the flow matching parameterization said to result in straighter sampling paths?
 If the model would be perfectly confident about the data point it is moving to, the path from noise to data will be a straight line with the flow matching schedule.
-Straight lined ODEs would be great because it means that there is no integration error whatsoever.
-Unfortanely, the predictions are not for a single point. Instead they average over a larger distribution.
+Straight line ODEs would be great because it means that there is no integration error whatsoever.
+Unfortunately, the predictions are not for a single point. Instead they average over a larger distribution.
 <!-- In this case, there is no guarantee that the flow matching formulation or DDIM integration leads to less error. -->
 
 <div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
