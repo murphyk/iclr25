@@ -366,7 +366,7 @@ Note that we have introduced an additional parameter $\eta_t$ which controls the
 
 ### Flow Matching framework hyperparameters
 
-Recalling CITE OVERVIEW section, we have that a diffusion model is defined by a forward process of the form 
+Now let's turn to flow matching and its degrees of freedom. We consider a slightly more general setting than in the overview and introduce the following interpolation
 
 $$
 \begin{equation}
@@ -374,7 +374,8 @@ $$
 \end{equation}
 $$
 
-Hence, the free parameters are given by $\alpha_t$ and $\sigma_t$. From the flow matching perspective, the generative process is by the following trajectory
+This is a specific case of the general <em>stochastic interpolation</em><d-cite key="liu2022flow,albergo2023stochastic"></d-cite>.
+In that case, the free parameters are given by $\alpha_t$ and $\sigma_t$. From the flow matching perspective, the generative process is by the following trajectory
 
 $$
 \begin{equation}
@@ -385,7 +386,7 @@ $$
 Note that we have introduced an additional parameter $\varepsilon_t$ which controls the amount of stochasticity at inference time. 
 
 <div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
-  Flow matching frameworks are entirely determined by three hyperparameters  
+  Flow matching frameworks can be entirely determined by three hyperparameters  
   <p>1. $\alpha_t$ which controls the data component in the interpolation. </p>
   <p>2. $\sigma_t$ which controls the noise component in the interpolation. </p>
   <p style="margin: 0;">3. $\varepsilon_t$ which controls the amount of stochasticity at inference time. </p>
