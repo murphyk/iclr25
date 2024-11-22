@@ -157,6 +157,9 @@ An interesting special case is the standard flow matching interpolation ($\alpha
 
 Check it out for yourself below: DDIM always gives the same samples no matter the schedule, which is also the same as flow matching.
 When adjusting the slider to the right we adjust $\alpha$ and $\sigma$ towards the Variance Preserving (VP) schedule.
+
+The ground truth line is the true ODE path while the DDIM and ODE lines show an approximation with just a few sampling steps.
+
 <div class="l-page">
   <iframe src="{{ 'assets/html/2025-04-28-distill-example/interactive_alpha_sigma.html' | relative_url }}" frameborder='0' scrolling='no' height="600px" width="100%"></iframe>
 </div>
