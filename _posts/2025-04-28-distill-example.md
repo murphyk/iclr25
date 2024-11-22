@@ -330,30 +330,34 @@ So far, we have shown that the equivalence of the flow matching sampler and the 
 We have also shown that the weightings appearing in flow matching and diffusion models can all be expressed in a general framework by expressing them in terms of log-SNR. 
 This should (hopefully!) have convinced you that the frameworks are identical. 
 But how easily can you move from one framework to the other? 
-Below, we derive exact formula to move from a diffusion model to a flow matching perspective and vice-versa. 
+Below, we derive <strong>exact formula</strong> to move from a diffusion model to a flow matching perspective and vice-versa. 
 
 ### Diffusion Models framework hyperparameters
 
-Recalling CITE OVERVIEW section, we have that a diffusion model is defined by a forward process of the form 
+We have stated in the overview that "A diffusion process gradually destroys an observed data $$ \bf{x} $$ over time $$t$$". But what is this gradual process? It can be fully described by the following evolution equation
 
 $$
 \begin{equation}
-\mathrm{d} {\bf z}_t = f_t {\bf z}_t \mathrm{d} t + g_t \mathrm{d} {\bf z} .
+\mathrm{d} {\bf z}_t = f_t {\bf z}_t \mathrm{d} t + g_t \mathrm{d} {\bf z} ,
 \end{equation}
 $$
 
-Hence, the free parameters are given by $f_t$ and $g_t$. From the diffusion model perspective, the generative process is given by the backward of the forward process, i.e.
+where \mathrm{d} {\bf z} is an <em> infinitesimal Gaussian</em> <d-footnote>If you want to  be fancy this is usually referred to as a Brownian motion in the literature. </d-footnote>
+
+Looking at this representation, the free parameters are given by $f_t$ and $g_t$. From the diffusion model perspective, the generative process is given by the reverse of the forward process, whose formula is given by 
 
 $$
 \begin{equation}
-\mathrm{d} {\bf z}_t = (f_t {\bf z}_t - \frac{1+ \eta_t^2}{2}g_t^2 \nabla \log p_t({\bf z_t}) ) \mathrm{d} t + \eta_t g_t \mathrm{d} {\bf z} .
+\mathrm{d} {\bf z}_t = (f_t {\bf z}_t - \frac{1+ \eta_t^2}{2}g_t^2 \nabla \log p_t({\bf z_t}) ) \mathrm{d} t + \eta_t g_t \mathrm{d} {\bf z} ,
 \end{equation}
 $$
 
-Note that we have introduced an additional parameter $\eta_t$ which controls the amount of stochasticity at inference time. When discretizing the backward process we recover DDIM in the case $\eta_t = 0$ and DDPM in the case $\eta_t = 1$.
+where $\nabla \log p_t$ is the <em>score</em> of the forward process <d-footnote>This is why you might have noticed that some papers refer to diffusion models as "score-based generative models".</d-footnote>
+
+Note that we have introduced an additional parameter $\eta_t$ which controls the amount of stochasticity at inference time. This is exactly the <em>churn</em> parameter introduced before. When discretizing the backward process we recover DDIM in the case $\eta_t = 0$ and DDPM in the case $\eta_t = 1$. So to summarize: 
 
 <div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
-  Diffusion model frameworks are entirely determined by three hyperparameters  
+  Diffusion model frameworks can be entirely determined by three hyperparameters  
   <p>1. $f_t$ which controls how much we forget the original data in the forward process. </p>
   <p>2. $g_t$ which controls how much noise we input into the samples in the forward process. </p>
   <p style="margin: 0;">3. $\eta_t$ which controls the amount of stochasticity at inference time. </p>
