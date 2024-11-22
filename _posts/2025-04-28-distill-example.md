@@ -136,16 +136,16 @@ So far we can already sense the similar flavors of the two frameworks:
 
 ## Sampling and Straightness Misnomer
 
-Deterministic sampling is simpler, let's focus on that first. Imageine you want to use your trained denoiser model to transform random noise into a datapoint.
+Deterministic sampling is simpler, let's focus on that first. Imagine you want to use your trained denoiser model to transform random noise into a datapoint.
 
-In both frameworks deterministic sampling comes down to integrating an ODE. One of the choice we have, is the numerical method to compute the ODE. A famous inegrator is the DDIM sampler, which analyically integrates the sampling ODE for a *constant* prediction from your network. Of course the network prediction is not constant, but if the stepsize is small enough one hopes it suffices. We have seen this sampler in the introduction section before and it is:
+In both frameworks deterministic sampling comes down to integrating an ODE. One of the choice we have, is the numerical method to compute the ODE. The default method in diffusion literature is the DDIM sampler, which analyically integrates the sampling ODE for a *constant* prediction from your network. Of course the network prediction is not constant, but for small step sizes the approximation gets arbitrarily close to the true ODE path. We have seen this sampler in the introduction section before and it is:
 
 $$
 {\bf z}_{s} = \alpha_{s} \hat{\bf x} + \sigma_{s} \hat{\boldsymbol \epsilon},\\
 $$
 
 Recall that rescalings of $\alpha_t$ $\sigma_t$ should not matter, instead the important thing is their ratio $\alpha_t / \sigma_t$. 
-What's special about DDIM is that it is insensitive to rescalings of $\alpha_t$ and $\sigma_t$. No matter whether your schedule is variance preserving, variance exploding or flow matching, it gives the same answer!<d-footnote>You may have to rescale your inputs and outputs of your neural net for this, but it is pretty straightforward. Other choices in literature are standard Euler method or higher-order methods, but these give different results with different schedules.</d-footnote>
+What's special about DDIM is that it is insensitive to rescalings of $\alpha_t$ and $\sigma_t$. No matter whether your schedule is variance preserving, variance exploding or flow matching, it gives the same answer!<d-footnote>You may have to rescale your inputs and outputs of your neural net for this, but it is pretty straightforward. Other choices in literature are standard Euler method or higher-order methods, but these give different results with different results depending on the choice of $\alpha$ and $\sigma$.</d-footnote>
 
 
 An interesting special case is the standard flow matching interpolation ($\alpha_t = 1. - t$, $\sigma_t = t$). In this case Euler integration (used by flow matching) is exactly the same as DDIM.
@@ -156,13 +156,14 @@ An interesting special case is the standard flow matching interpolation ($\alpha
 </div>
 
 Check it out for yourself below: DDIM always gives the same samples no matter the schedule, which is also the same as flow matching.
+When adjusting the slider to the right we adjust $\alpha$ and $\sigma$ towards the Variance Preserving (VP) schedule.
 <div class="l-page">
   <iframe src="{{ 'assets/html/2025-04-28-distill-example/interactive_alpha_sigma.html' | relative_url }}" frameborder='0' scrolling='no' height="600px" width="100%"></iframe>
 </div>
 
 <p align="center"><i>"Flow matching paths are straight, whereas diffusion paths are curved."</i></p>
 
-Wait? The flow matching schedule is said to result in straighter paths, but in the above figure its sampling trajectories look *curved*.
+Wait? The flow matching schedule is said to result in straighter paths, but in the above figure its sampling trajectories look *curved* and the VP paths look *straight*.
 
 So why is the flow matching paramterization said to result in straighter sampling paths?
 If the model would be perfectly confident about the data point it is moving to, the path from noise to data will be a straight line with the flow matching schedule.
@@ -176,7 +177,8 @@ In this case, there is no garantuee that the flow matching formulation or DDIM i
 </div>
 
 
-In fact, in the interactive graph below we can see that the variance preserving formulation is optimal if the model prediction has a variance of $1$:
+In fact, in the interactive graph below you can change the variance of a simple Guassian data distribution.
+Note how the Variance Preserving schedule (VP Diffusion) is best for wide distributions while DDIM and the Flow Matching paths work well for narrow distributions.
 
 <div class="l-page">
   <iframe src="{{ 'assets/html/2025-04-28-distill-example/interactive_vp_vs_flow.html' | relative_url }}" frameborder='0' scrolling='no' height="600px" width="100%"></iframe>
