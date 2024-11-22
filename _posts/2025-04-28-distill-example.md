@@ -71,7 +71,7 @@ Flow matching is gaining popularity recently, due to its simplicity in formulati
 <p align="center"><i>"Does this diffusion technique also work with flow matching?"</i></p>
 
 
-What exactly are the differences between these two approaches? As we will see, diffusion modelling and Gaussian flow matching are nearly the same. So the answer to this question is "yes", unless the matching is not to a Gaussian.
+What exactly are the differences between these two approaches? As we will see, diffusion modelling and Gaussian flow matching are the same. So the answer to this question is "yes", unless the matching is not to a Gaussian.
 
 To give an example, you may assume that flow matching sampling has to be deterministic. However, you have trained a general denoiser: stochastic or deterministic sampling, it's up to you!
 
@@ -95,7 +95,7 @@ $$
 \label{eq:forward}
 \end{equation}
 $$
-$$\alpha_t$$ and $$\sigma_t$$ define the **noise schedule**. A useful notation is the log signal-to-noise ratio $$\lambda_t = \log(\alpha_t^2 / \sigma_t^2)$$, which decreases as $$t$$ increases from $$0$$ (clean data) to $$1$$ (Gaussian noise).
+$$\alpha_t$$ and $$\sigma_t$$ define the **noise schedule**. Various noise schedules have been proposed in the diffusion literature, such as variance-preserving schedules ($$\alpha_t^2 + \sigma_t^2 = 1$$), variance-exploding schedules ($$\alpha_t=1$$), and other options in between. A useful notation is the log signal-to-noise ratio $$\lambda_t = \log(\alpha_t^2 / \sigma_t^2)$$, which decreases as $$t$$ increases from $$0$$ (clean data) to $$1$$ (Gaussian noise).
 
 To generate new samples, we can "reverse" the forward process gradually: Initialize the sample from Gaussian at the highest noise level. Given the sample $${\bf z}_t$$ at time step $$t$$, we predict what the clean sample might look like with a neural network $$\hat{\bf x} = \hat{\bf x}({\bf z}_t; t)$$ (a.k.a. denoiser model), and then we project it back to a lower noise level $$s$$ with the same forward transformation:
 
@@ -137,9 +137,9 @@ So far we can already sense the similar flavors of the two frameworks:
 
 ## Sampling and Straightness Misnomer
 
-A common belief is that the two frameworks are different in sampling: Flow matching is deterministic and with "straight" paths, while diffusion model sampling is stochastic and with curved paths. Let's discuss it first. 
+A common thought is that the two frameworks are different in sampling: Flow matching is deterministic and with "straight" paths, while diffusion model sampling is stochastic and with curved paths. Let's discuss it first. 
 
-Deterministic sampling is simpler, which we focus on for now. Imagine you want to use your trained denoiser model to transform random noise into a datapoint. Recall that the DDIM sampler iteratively updates samples by $${\bf z}_{s} = \alpha_{s} \hat{\bf x} + \sigma_{s} \hat{\boldsymbol \epsilon}$$. Interestingly, rearranging terms it can be expressed in the following formulation, applicable to several different network outputs and reparametrizations:
+We will focus on deterministic sampling first which is simpler. Imagine you want to use your trained denoiser model to transform random noise into a datapoint. Recall that the DDIM update is given by $${\bf z}_{s} = \alpha_{s} \hat{\bf x} + \sigma_{s} \hat{\boldsymbol \epsilon}$$. Interestingly, rearranging terms it can be expressed in the following formulation, applicable to several network outputs and reparametrizations:
 
 $$
 \begin{equation}
@@ -153,18 +153,18 @@ $$
 | $$\hat{\boldsymbol \epsilon}$$-prediction      |    $$\tilde{\bf z}_t = {\bf z}_t / \alpha_t$$ and $$\eta_t = {\sigma_t}/{\alpha_t}$$ |
 | $$\hat{\bf u}$$-flow matching vector field      |    $$\tilde{\bf z}_t = {\bf z}_t/(\alpha_t + \sigma_t)$$ and $$\eta_t = {\alpha_t}/(\alpha_t + \sigma_t)$$ | 
 
-Comparing it with the flow matching update in Equation (4), looks familiar? With $$\hat{\bf u}$$ prediction and $$\alpha_t = t$$, $$\sigma_t = 1- t$$, we have $$\tilde{\bf z}_t = {\bf z}_t$$ and $$\eta_t = t$$, so that the DDIM update is the same as the flow matching update! More formally, the flow matching update can be considered the Euler integration of the underlying sampling ODE, and
+Recall the flow matching update in Equation (4), look similar? With $$\hat{\bf u}$$ prediction and $$\alpha_t = t$$, $$\sigma_t = 1- t$$, we have $$\tilde{\bf z}_t = {\bf z}_t$$ and $$\eta_t = t$$, so that we recover the flow matching update! More formally, the flow matching update can be considered the Euler integration of the underlying sampling ODE, and
 
 <div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
   <!-- <p>For weighting functions,</p> -->
   <p align="center" style="margin: 0;"><em>Diffusion with DDIM sampling == Flow matching sampling (Euler).</em></p>
 </div>
 
-A few other traits about the DDIM sampler:
+Other traits about the DDIM sampler:
 
-1. As we can tell from Equation (5), DDIM sampler *analyically* integrates the underlying sampling ODE if the network output is a *constant* over time. Of course the network prediction is not constant, but it means the inaccuracy of DDIM sampler only comes from approximating the intractable time integral of the network output, but not the linear term of $${\bf z}_t$$ as in the Euler sampler of probability flow ODE <d-cite key="song2020score"></d-cite>. This holds for all three network outputs.
+1. DDIM sampler *analyically* integrates the underlying sampling ODE if the network output is a *constant* over time <d-footnote>Can tell from Equation (5) by writing it as $\mathrm{d}\tilde{\bf z}_t = \mathrm{[Network \; output]}\cdot\mathrm{d}\eta_t$</d-footnote>. Of course the network prediction is not constant, but it means the inaccuracy of DDIM sampler only comes from approximating the intractable integral of the network output, not from additional linear term of $${\bf z}_t$$ as in the Euler sampler of probability flow ODE <d-cite key="song2020score"></d-cite>. This holds for all three network outputs.
 
-2. DDIM update is invariant to a linear scaling applied to both $\alpha_t$ $\sigma_t$, as the scaling effect will get cancelled out for both $\tilde{\bf z}_t$ and $\eta_t$. <d-footnote>Other choices in literature are standard Euler method or higher-order methods, but these give different results with different results depending on the choice of $\alpha$ and $\sigma$.</d-footnote>
+2. DDIM update and final samples are invariant to a linear scaling applied to $\alpha_t$ and $\sigma_t$, as scaling does not affect $\tilde{\bf z}_t$ and $\eta_t$. 
 
 <!-- In both frameworks deterministic sampling comes down to integrating an ODE. One of the choice we have, is the numerical method to compute the ODE. A famous inegrator is the DDIM sampler, which analyically integrates the sampling ODE for a *constant* prediction from your network. Of course the network prediction is not constant, but if the stepsize is small enough one hopes it suffices. We have seen this sampler in the introduction section before and it is: -->
 
@@ -176,12 +176,13 @@ What's special about DDIM is that it is insensitive to rescalings of $\alpha_t$ 
 <!-- An interesting special case is the standard flow matching interpolation ($\alpha_t = 1. - t$, $\sigma_t = t$). In this case Euler integration (used by flow matching) is exactly the same as DDIM. -->
 
 
-Check it out for yourself below: DDIM always gives the same samples no matter the schedule, which is also the same as flow matching.
-Beware to that generating the same samples does not mean following the same path. The ODE and DDIM paths do bend as you change the slider but note how start and end-points never change.
-For the Euler sampler the schedule makes a true difference: Both the paths and the data points that it ends at change.
-When adjusting the slider to the right we adjust $\alpha$ and $\sigma$ towards the Variance Preserving (VP) schedule.
+Skeptical about 2? Check it out for yourself below: We consider several settings between the flow matching (FM) noise schedule and a variance-preserving (VP) noise schedule by applying a linear scaling. DDIM always gives the same final samples regardless of the scaling of the schedule, which is also the same as the flow matching sampler. The paths bend in different ways as $${\bf z}_t$$ (not $$\hat{\bf z}_t$$) is scale-dependent along the path. For the Euler sampler of diffusion probabilty flow ODE, the scaling makes a true difference: Both the paths and the final samples change.
 
-The ground truth line is the true ODE path while the DDIM and ODE lines show an approximation with just a few sampling steps.
+
+<!-- Beware to that generating the same samples does not mean following the same path. The ODE and DDIM paths do bend as you change the slider but note how start and end-points never change. -->
+<!-- When adjusting the slider to the right we adjust $\alpha$ and $\sigma$ towards the Variance Preserving (VP) schedule. -->
+
+<!-- The ground truth line is the true ODE path while the DDIM and ODE lines show an approximation with just a few sampling steps. -->
 
 <div class="l-page">
   <iframe src="{{ 'assets/html/2025-04-28-distill-example/interactive_alpha_sigma.html' | relative_url }}" frameborder='0' scrolling='no' height="600px" width="100%"></iframe>
@@ -193,9 +194,9 @@ Wait? The flow matching schedule is said to result in straighter paths, but in t
 
 So why is the flow matching paramterization said to result in straighter sampling paths?
 If the model would be perfectly confident about the data point it is moving to, the path from noise to data will be a straight line with the flow matching schedule.
-Straight lined ODEs would be great because it means that there is no integration error whatsover.
+Straight lined ODEs would be great because it means that there is no integration error whatsoever.
 Unfortanely, the predictions are not for a single point. Instead they average over a larger distribution.
-In this case, there is no garantuee that the flow matching formulation or DDIM integration leads to less error.
+<!-- In this case, there is no guarantee that the flow matching formulation or DDIM integration leads to less error. -->
 
 <div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
   <!-- <p>For weighting functions,</p> -->
@@ -204,7 +205,7 @@ In this case, there is no garantuee that the flow matching formulation or DDIM i
 
 
 In fact, in the interactive graph below you can change the variance of a simple Guassian data distribution.
-Note how the Variance Preserving schedule (VP Diffusion) is best for wide distributions while DDIM and the Flow Matching paths work well for narrow distributions.
+Note how the variance preserving schedule is the best for wide distributions while the flow matching schedule works well for narrow distributions.
 
 <div class="l-page">
   <iframe src="{{ 'assets/html/2025-04-28-distill-example/interactive_vp_vs_flow.html' | relative_url }}" frameborder='0' scrolling='no' height="600px" width="100%"></iframe>
@@ -213,12 +214,14 @@ Note how the Variance Preserving schedule (VP Diffusion) is best for wide distri
 
 Finding such straight paths for real-life datasets like images is of course much less straightforward. But the conclusion remains the same: The optimal integration method depends on the data and the models prediction.
 
+Two important takeaways from determinstic sampling:
 
+<div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
+  <p>1. DDIM is invariant to a linear scaling to the noise schedule, and is equivalent to the flow matching sampling. </p>
+  <p  style="margin: 0;">2. Flow matching schedule is only straight for a model predicting a single point. For realistic distributions other interpolations can give straighter paths.</p>
+</div>
 
-There are two important things from determinstic sampling:
-1. For DDIM the interpolation between data and noise is irrelevant and always equivalant to flow matching <d-footnote>The variance exploding formulation ($\alpha_t = 1$, $\sigma_t = t$) is also equivalant to DDIM and flow matching.</d-footnote>.
-2. Flow matching is only straight for a model predicting a single point. For realistic distributions other interpolations can give straighter paths.
-
+<!-- 1. For DDIM the interpolation between data and noise is irrelevant and always equivalant to flow matching <d-footnote>The variance exploding formulation ($\alpha_t = 1$, $\sigma_t = t$) is also equivalant to DDIM and flow matching. -->
 
 ## Training (weighting, output, schedule)
 
@@ -273,20 +276,20 @@ In practice, however, the model output might make a difference. For example,
 Therefore, a heuristic is to choose a network output that is a combination of $${\bf x}$$- and $${\boldsymbol \epsilon}$$-prediction, which applies to the $${\bf v}$$-prediction and the flow matching vector field $${\bf u} = {\bf x} - {\bf \epsilon}$$.
 
 
+### Noise schedule
+A few remarks about noise schedule:
+1. All noise schedules can be normalized as a variance-preserving schedule, with a linear scaling of $${\bf z}_t$$ and an unscaling at the network input. The key defining property of a noise schedule is the log signal-to-noise ratio $$\lambda_t$$.
+2. The training loss is *invariant* to the training noise schedule, since the loss fuction can be rewritten as $$\mathcal{L}(\mathbf{x}) = \int_{\lambda_{\min}}^{\lambda_{\max}} w(\lambda) \mathbb{E}_{\boldsymbol{\epsilon} \sim \mathcal{N}(0, \mathbf{I})} \left[ \|\hat{\boldsymbol{\epsilon}} - \boldsymbol{\epsilon}\|_2^2 \right] \, d\lambda$$, which is irrelevant to $$\lambda_t$$, and only related $$\lambda_{\mathrm{min}}$$ and $$\lambda_{\mathrm{max}}$$. However, $$\lambda_t$$ might still affect the variance of the Monte Carlo estimator of the training loss. A few heuristics have been proposed in the literature to automatically adjust the noise schedules over the training course. [Sander's blog post](https://sander.ai/2024/06/14/noise-schedules.html#adaptive) has a nice summary.
+3. As we will see in the next section, the testing noise schedule does impact the sample quality. However, one can choose completely different noise schedules for training and sampling, based on distinct heuristics: For training, it is desirable to have a noise schedule that minimizes the variance of the Monte Calor estimator, whereas for sampling the noise schedule is more related to the discretization error of the ODE / SDE sampling trajectories and the model curvature.
+
+
 In summary, we have the following conclusions for diffusion models / flow matching training:
 
 <div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
-  <p>1. Weighting function <strong> is important for training</strong>. For perceptual signals, it balances the importance of different frequency components. Should tune based on the characteristics of the input data. </p>
-  <p>2. Noise schedule <strong>is far less important training objective</strong> and affects the training efficiency.</p>
+  <p>1. Weighting function <strong> is important for training</strong>. For perceptual signals, it balances the importance of different frequency components. Should tune based on data characteristics. </p>
+  <p>2. Noise schedule <strong>is far less important to training objective</strong> and affects the training efficiency.</p>
   <p style="margin: 0;">3. The network output proposed by flow matching nicely balances ${\bf x}$- and ${\epsilon}$-prediction, similar to ${\bf v}$-prediction.</p>
 </div>
-
-
-### Noise schedule
-The noise schedule of flow matching is in a very simple form: $$\alpha_t = t, \sigma_t = 1 - t$$. Various noise schedules have been proposed in the diffusion literature, such as variance-preserving schedules ($$\alpha_t^2 + \sigma_t^2 = 1$$), variance-exploding schedules ($$\alpha_t=1$$), and other options in between. A few remarks about noise schedule:
-1. All different noise schedules can be normalized as a variance-preserving schedule, with a linear scaling of $${\bf z}_t$$ and an unscaling at the network input. The key defining property of a noise schedule is the log signal-to-noise ratio $$\lambda_t$$.
-2. The training loss is *invariant* to the training noise schedule, since the loss fuction can be rewritten as $$\mathcal{L}(\mathbf{x}) = \int_{\lambda_{\min}}^{\lambda_{\max}} w(\lambda) \mathbb{E}_{\boldsymbol{\epsilon} \sim \mathcal{N}(0, \mathbf{I})} \left[ \|\hat{\boldsymbol{\epsilon}} - \boldsymbol{\epsilon}\|_2^2 \right] \, d\lambda$$, which is irrelevant to $$\lambda_t$$, and only related $$\lambda_{\mathrm{min}}$$ and $$\lambda_{\mathrm{max}}$$. However, $$\lambda_t$$ might still affect the variance of the Monte Carlo estimator of the training loss. A few heuristics have been proposed in the literature to automatically adjust the noise schedules over the training course. See [Sander's blog post](https://sander.ai/2024/06/14/noise-schedules.html#adaptive) for a nice summary.
-3. As we will see in the next section, the testing noise schedule does impact the sample quality. However, one can choose completely different noise schedules for training and sampling, based on distinct heuristics: For training, it is desirable to have a noise schedule that minimizes the variance of the Monte Calor estimator, whereas for sampling the noise schedule is more related to the discretization error of the ODE / SDE sampling trajectories and the model curvature.
 
 
 
