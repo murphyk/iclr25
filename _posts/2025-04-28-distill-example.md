@@ -162,11 +162,8 @@ Recall the flow matching update in Equation (4), look similar? With $$\hat{\bf u
 
 Other traits about the DDIM sampler:
 
-<<<<<<< HEAD
-1. DDIM sampler *analytically* integrates the underlying sampling ODE if the network output is a *constant* over time <d-footnote>Can tell from Equation (5) by writing it as $\mathrm{d}\tilde{\bf z}_t = \mathrm{[Network \; output]}\cdot\mathrm{d}\eta_t$</d-footnote>. Of course the network prediction is not constant, but it means the inaccuracy of DDIM sampler only comes from approximating the intractable integral of the network output, not from additional linear term of $${\bf z}_t$$ as in the Euler sampler of probability flow ODE <d-cite key="song2020score"></d-cite>. This holds for all three network outputs.
-=======
+
 1. DDIM sampler *analyically* integrates the underlying sampling ODE if the network output is a *constant* over time. Of course the network prediction is not constant, but it means the inaccuracy of DDIM sampler only comes from approximating the intractable integral of the network output <d-footnote>not from additional linear term of ${\bf z}_t$ as in the Euler sampler of probability flow ODE <d-cite key="song2020score"></d-cite></d-footnote>. This holds for all three network outputs.
->>>>>>> 5d5e32c (monor edit)
 
 2. DDIM update and final samples are invariant to a linear scaling applied to the noise schedule, as a scaling does not affect $\tilde{\bf z}_t$ and $\eta_t$. 
 
