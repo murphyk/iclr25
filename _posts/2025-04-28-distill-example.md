@@ -64,7 +64,7 @@ _styles: >
 {% include figure.html path="assets/img/2025-04-28-distill-example/twotrees.jpg" class="img-fluid" %}
 
 
-Flow matching is gaining popularity, due to its simplicity in formulation and "straightness" in the sampling trajectories. A common question one hears nowadays is: 
+Flow matching is gaining popularity recently, due to its simplicity in formulation and "straightness" in the sampling trajectories. A common question one hears nowadays is: 
 
 
 <!-- > Does this diffusion technique also work with Gaussian flow matching? -->
@@ -76,12 +76,12 @@ What exactly are the differences between these two approaches? As we will see, d
 To give an example, you may assume that flow matching sampling has to be deterministic. However, you have trained a general denoiser: stochastic or deterministic sampling, it's up to you!
 
 
-In this blog post, we take the most commonly<d-footnote>We focus on Gaussian flow matching with the optimal transport flow path.</d-footnote> used flow matching case <d-cite key="lipman2022flow"></d-cite>, also very related to <d-cite key="liu2022flow"></d-cite> and <d-cite key="albergo2023stochastic"></d-cite>. Our purpose is not to downweigh the importance of either framework. In fact, both frameworks are important and are derived from distinct theoretical perspectives. It is even more encouraging that they lead to the same algorithm in practice. The goal of this post is to make the practitioner feel comfortable to use the two frameworks interchangeably, understand the actual degrees of freedom we have when tuning the algorithm (no matter how we name it).
+In this blog post, we take the most commonly<d-footnote>We focus on Gaussian flow matching with the optimal transport flow path.</d-footnote> used flow matching case <d-cite key="lipman2022flow"></d-cite>, also very related to rectified flow <d-cite key="liu2022flow"></d-cite> and stochastic interpolant<d-cite key="albergo2023stochastic"></d-cite>. Our purpose is not to downweigh the importance of either framework. In fact, both frameworks are important and are derived from distinct theoretical perspectives. It is even more encouraging that they lead to the same algorithm in practice. The goal of this post is to make the practitioner feel comfortable to use the two frameworks interchangeably, understand the actual degrees of freedom we have when tuning the algorithm (no matter how we name it).
 
 
-## Same forward process
+## Overview
 
-We start by recalling the two frameworks (diffusion models and flow matching). We compare them from a high level and will see that the *process* is the same.
+We start by a quick overview of the two frameworks. We compare them from a high level and will see that the *processes* are the same.
 <!-- We highlight the free parameters in each framework and how they relate to each other. 
 In particular, there exists explicit mappings to define a diffusion model from a flow matching model and vice-versa. This overview does not dive into the training of such models, i.e., we assume that all the learnable quantities have been adequatly optimized. We also do not discuss the different sampling techniques used at inference. Both the training and the inference will be discussed in further sections.  -->
 
@@ -97,32 +97,33 @@ $$
 $$
 $$\alpha_t$$ and $$\sigma_t$$ define the **noise schedule**. A useful notation is the log signal-to-noise ratio $$\lambda_t = \log(\alpha_t^2 / \sigma_t^2)$$, which decreases as $$t$$ increases from $$0$$ (clean data) to $$1$$ (Gaussian noise).
 
-To generate new samples, we can "reverse" the forward process gradually: Initialize the sample from Gaussian at the highest noise level. Given the sample $${\bf z}_t$$ at time step $$t$$, we predict what the clean sample might look like with a neural network $$\hat{\bf x} = \hat{\bf x}({\bf z}_t; t)$$, and then we project it back to a lower noise level with the same forward transformation:
+To generate new samples, we can "reverse" the forward process gradually: Initialize the sample from Gaussian at the highest noise level. Given the sample $${\bf z}_t$$ at time step $$t$$, we predict what the clean sample might look like with a neural network $$\hat{\bf x} = \hat{\bf x}({\bf z}_t; t)$$ (a.k.a. denoiser model), and then we project it back to a lower noise level $$s$$ with the same forward transformation:
 
 $$
 \begin{eqnarray}
-{\bf z}_{t - \Delta t} &=& \alpha_{t - \Delta t} \hat{\bf x} + \sigma_{t - \Delta t} \hat{\boldsymbol \epsilon},\\
+{\bf z}_{s} &=& \alpha_{s} \hat{\bf x} + \sigma_{s} \hat{\boldsymbol \epsilon},\\
 \end{eqnarray}
 $$
 where $$\hat{\boldsymbol \epsilon} = ({\bf z}_t - \alpha_t \hat{\bf x}) / \sigma_t$$. We keep alternating between predicting the clean data, and projecting it back to a lower noise level until we get the clean sample.
-This is the DDIM sampler <d-cite key="song2020denoising"></d-cite>. The randomness of samples only comes from the initial Gaussian sample, and the entire reverse process is deterministic. 
+This is the DDIM sampler <d-cite key="song2020denoising"></d-cite>. The randomness of samples only comes from the initial Gaussian sample, and the entire reverse process is deterministic. We will discuss the stochastic samplers later. 
 
 ### Flow matching
-Flow Matching provides another perspective of the forward process: we view it directly as an interpolation between the data $${\bf x}$$ and the Gaussian noise $$\boldsymbol \epsilon$$. In the more general case, $$\boldsymbol \epsilon$$ can also be sampled from an arbitrary distribution. The forward process should look familiar to the reader, and is defined as:
+Flow Matching provides another perspective of the forward process: we view it as a direct interpolation between the data $${\bf x}$$ and the Gaussian noise $$\boldsymbol \epsilon$$, not adding noise gradually. In the more general case, $$\boldsymbol \epsilon$$ can also be sampled from an arbitrary distribution. The forward process should look familiar to the reader, and is defined as:
 $$
 \begin{eqnarray}
 {\bf z}_t = t {\bf x} + (1-t) {\boldsymbol \epsilon}.\\
 \end{eqnarray}
 $$
 
-The flow of $${\bf z}_t$$ can be expressed as $${\bf z}_t = {\bf z}_{t - \Delta t} + ({\bf x} - {\boldsymbol \epsilon}) \Delta t$$, where $${\bf x} - {\bf \epsilon}$$ is the "velocity", "flow", or "vector field". For sampling, we reverse terms and replace the vector field with our best guess $$\hat{\bf x}$$ at time step $$t$$ given $${\bf z}_t$$ (since we do not have access to $${\bf x}$$ during sampling):
+It corresponds to the diffusion forward process with $$\alpha_t = t, \sigma_t = 1-t$$. The flow from time $$s$$ to $$t$$ ($$s < t$$) can be expressed as $${\bf z}_t = {\bf z}_{s} + {\bf u} (t - s) $$, where $${\bf u} = {\bf x} - {\bf \epsilon}$$ is the "velocity", "flow", or "vector field". For sampling, we reverse the time and replace the vector field with our best guess of the clean data at time step $$t$$, since we do not have access to it during sampling:
 
 $$
 \begin{eqnarray}
-{\bf z}_{t - \Delta t} = {\bf z}_t - (\hat{\bf x} - \hat{\boldsymbol \epsilon})\Delta t.\\
+{\bf z}_{s} = {\bf z}_t + \hat{\bf u}(s - t).\\
+\label{eq:flow_update}
 \end{eqnarray}
 $$
-$$\hat{\bf u} = \hat{\bf u}({\bf z}_t; t) := \hat{\bf x} - \hat{\boldsymbol \epsilon}$$ can be parametrized by a neural network.
+$$\hat{\bf u} = \hat{\bf u}({\bf z}_t; t) = \hat{\bf x} - \hat{\boldsymbol \epsilon}$$ can be parametrized by a neural network.
 
 
 So far we can already sense the similar flavors of the two frameworks:
@@ -130,30 +131,50 @@ So far we can already sense the similar flavors of the two frameworks:
 
 <div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
   <p>1. <strong>Same forward process</strong>: assume that one end of flow matching is Gaussian, and the noise schedule of diffusion models is in a particular form. </p>
-  <p  style="margin: 0;">2. <strong>"Similar" sampling processes</strong>: both follow an iterative update that a guess of the clean data at the current time step. (Spoiler: we will show they are exactly the same!)</p>
+  <p  style="margin: 0;">2. <strong>"Similar" sampling processes</strong>: both follow an iterative update that involves a guess of the clean data at the current time step. (Spoiler: we will show they are exactly the same!)</p>
 </div>
 
 
 ## Sampling and Straightness Misnomer
 
-Deterministic sampling is simpler, let's focus on that first. Imagine you want to use your trained denoiser model to transform random noise into a datapoint.
+A common belief is that the two frameworks are different in sampling: Flow matching is deterministic and with "straight" paths, while diffusion model sampling is stochastic and with curved paths. Let's discuss it first. 
 
-In both frameworks deterministic sampling comes down to integrating an ODE. One of the choice we have, is the numerical method to compute the ODE. The default method in diffusion literature is the DDIM sampler, which analyically integrates the sampling ODE for a *constant* prediction from your network. Of course the network prediction is not constant, but for small step sizes the approximation gets arbitrarily close to the true ODE path. We have seen this sampler in the introduction section before and it is:
+Deterministic sampling is simpler, which we focus on for now. Imagine you want to use your trained denoiser model to transform random noise into a datapoint. Recall that the DDIM sampler iteratively updates samples by $${\bf z}_{s} = \alpha_{s} \hat{\bf x} + \sigma_{s} \hat{\boldsymbol \epsilon}$$. Interestingly, rearranging terms it can be expressed in the following formulation, applicable to several different network outputs and reparametrizations:
 
 $$
-{\bf z}_{s} = \alpha_{s} \hat{\bf x} + \sigma_{s} \hat{\boldsymbol \epsilon},\\
+\begin{equation}
+\tilde{\bf z}_{s} = \tilde{\bf z}_{t} + \mathrm{Network \; output} \cdot (\eta_s - \eta_t) \\
+\end{equation}
 $$
 
-Recall that rescalings of $\alpha_t$ $\sigma_t$ should not matter, instead the important thing is their ratio $\alpha_t / \sigma_t$. 
-What's special about DDIM is that it is insensitive to rescalings of $\alpha_t$ and $\sigma_t$. No matter whether your schedule is variance preserving, variance exploding or flow matching, it gives the same answer!<d-footnote>You may have to rescale your inputs and outputs of your neural net for this, but it is pretty straightforward. Other choices in literature are standard Euler method or higher-order methods, but these give different results with different results depending on the choice of $\alpha$ and $\sigma$.</d-footnote>
+| Network Output  | Reparametrization   |
+| :------------- |-------------:|
+| $$\hat{\bf x}$$-prediction      |    $$\tilde{\bf z}_t = {\bf z}_t / \sigma_t$$ and $$\eta_t = {\alpha_t}/{\sigma_t}$$ |
+| $$\hat{\boldsymbol \epsilon}$$-prediction      |    $$\tilde{\bf z}_t = {\bf z}_t / \alpha_t$$ and $$\eta_t = {\sigma_t}/{\alpha_t}$$ |
+| $$\hat{\bf u}$$-flow matching vector field      |    $$\tilde{\bf z}_t = {\bf z}_t/(\alpha_t + \sigma_t)$$ and $$\eta_t = {\alpha_t}/(\alpha_t + \sigma_t)$$ | 
 
-
-An interesting special case is the standard flow matching interpolation ($\alpha_t = 1. - t$, $\sigma_t = t$). In this case Euler integration (used by flow matching) is exactly the same as DDIM.
+Comparing it with the flow matching update in Equation (4), looks familiar? With $$\hat{\bf u}$$ prediction and $$\alpha_t = t$$, $$\sigma_t = 1- t$$, we have $$\tilde{\bf z}_t = {\bf z}_t$$ and $$\eta_t = t$$, so that the DDIM update is the same as the flow matching update! More formally, the flow matching update can be considered the Euler integration of the underlying sampling ODE, and
 
 <div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
   <!-- <p>For weighting functions,</p> -->
   <p align="center" style="margin: 0;"><em>Diffusion with DDIM sampling == Flow matching sampling (Euler).</em></p>
 </div>
+
+A few other traits about the DDIM sampler:
+
+1. As we can tell from Equation (5), DDIM sampler *analyically* integrates the underlying sampling ODE if the network output is a *constant* over time. Of course the network prediction is not constant, but it means the inaccuracy of DDIM sampler only comes from approximating the intractable time integral of the network output, but not the linear term of $${\bf z}_t$$ as in the Euler sampler of probability flow ODE <d-cite key="song2020score"></d-cite>. This holds for all three network outputs.
+
+2. DDIM update is invariant to a linear scaling applied to both $\alpha_t$ $\sigma_t$, as the scaling effect will get cancelled out for both $\tilde{\bf z}_t$ and $\eta_t$. <d-footnote>Other choices in literature are standard Euler method or higher-order methods, but these give different results with different results depending on the choice of $\alpha$ and $\sigma$.</d-footnote>
+
+<!-- In both frameworks deterministic sampling comes down to integrating an ODE. One of the choice we have, is the numerical method to compute the ODE. A famous inegrator is the DDIM sampler, which analyically integrates the sampling ODE for a *constant* prediction from your network. Of course the network prediction is not constant, but if the stepsize is small enough one hopes it suffices. We have seen this sampler in the introduction section before and it is: -->
+
+
+<!-- Recall that rescalings of $\alpha_t$ $\sigma_t$ should not matter, instead the important thing is their ratio $\alpha_t / \sigma_t$. 
+What's special about DDIM is that it is insensitive to rescalings of $\alpha_t$ and $\sigma_t$. No matter whether your schedule is variance preserving, variance exploding or flow matching, it gives the same answer!<d-footnote>You may have to rescale your inputs and outputs of your neural net for this, but it is pretty straightforward. Other choices in literature are standard Euler method or higher-order methods, but these give different results with different results depending on the choice of $\alpha$ and $\sigma$.</d-footnote> -->
+
+
+<!-- An interesting special case is the standard flow matching interpolation ($\alpha_t = 1. - t$, $\sigma_t = t$). In this case Euler integration (used by flow matching) is exactly the same as DDIM. -->
+
 
 Check it out for yourself below: DDIM always gives the same samples no matter the schedule, which is also the same as flow matching.
 Beware to that generating the same samples does not mean following the same path. The ODE and DDIM paths do bend as you change the slider but note how start and end-points never change.
