@@ -348,7 +348,7 @@ Looking at this representation, the free parameters are given by $f_t$ and $g_t$
 
 $$
 \begin{equation}
-\mathrm{d} {\bf z}_t = (f_t {\bf z}_t - \frac{1+ \eta_t^2}{2}g_t^2 \nabla \log p_t({\bf z_t}) ) \mathrm{d} t + \eta_t g_t \mathrm{d} {\bf z} ,
+\mathrm{d} {\bf z}_t = \left( f_t {\bf z}_t - \frac{1+ \eta_t^2}{2}g_t^2 \nabla \log p_t({\bf z_t}) \right) \mathrm{d} t + \eta_t g_t \mathrm{d} {\bf z} ,
 \end{equation}
 $$
 
