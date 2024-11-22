@@ -326,8 +326,11 @@ Here we ran different samplers for 100 sampling steps using a cosine noise sched
 
 ## From Diffusion Models to Flow Matching and back
 
-Finally, we provide useful formula to move from a Flow Matching point of view to a diffusion model point of view. 
-We do not discuss training and sampling issues here but solely focus on showing that both frameworks are interchangeable. 
+So far, we have shown that the equivalence of the flow matching sampler and the DDIM sampler. 
+We have also shown that the weightings appearing in flow matching and diffusion models can all be expressed in a general framework by expressing them in terms of log-SNR. 
+This should (hopefully!) have convinced you that the frameworks are identical. 
+But how easily can you move from one framework to the other? 
+Below, we derive exact formula to move from a diffusion model to a flow matching perspective and vice-versa. 
 
 ### Diffusion Models framework hyperparameters
 
