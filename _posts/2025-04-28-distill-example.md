@@ -395,7 +395,7 @@ Note that we have introduced an additional parameter $\varepsilon_t$ which contr
 ### Equivalence of the points of view
 
 Despite their clear similarities it is not immediately clear how to link the diffusion model framework and the flow matching one. 
-Below, we provide formula which provide a one-to-one mapping between the two frameworks. In short:
+Below, we provide formulae which give a one-to-one mapping between the two frameworks. In short:
 
 <div style="padding: 10px 10px 10px 10px; border-left: 6px solid #FFD700; margin-bottom: 20px;">
   Diffusion model and flow matching are just one change of variable away!
