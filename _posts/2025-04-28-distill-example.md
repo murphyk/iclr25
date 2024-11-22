@@ -270,7 +270,7 @@ Below we summarize several network outputs proposed in the literature, including
 | $${\bf u}$$-flow matching vector field | $$\hat{\bf u} = \hat{\bf x} - \hat{\boldsymbol{\epsilon}} $$      |    $$ \lVert\hat{\bf u} - {\bf u}\rVert_2^2 = (1 + e^{\lambda / 2})^2 \lVert\hat{\bf x} - {\bf x}\rVert_2^2 $$ |
 
 In practice, however, the model output might make a difference. For example,
-* $${\bf x}$$-prediction can be problematic at low noise levels, because small changes create a large loss under typical weightings. You can also see in the sampler that any error in $$\hat{\bf x}$$ will get ampified in $$\hat{\boldsymbol \epsilon} = ({\bf z}_t - \alpha_t \hat{\bf x}) / \sigma_t$$, as $$\sigma_t$$ is close to 0.
+* $${\bf x}$$-prediction can be problematic at low noise levels, because small changes create a large loss under typical weightings. You can also see in the sampler that any error in $$\hat{\bf x}$$ will get amplified in $$\hat{\boldsymbol \epsilon} = ({\bf z}_t - \alpha_t \hat{\bf x}) / \sigma_t$$, as $$\sigma_t$$ is close to 0.
 * Following the similar reason, $${\boldsymbol \epsilon}$$-prediction is problematic at high noise levels, because $$\hat{\boldsymbol \epsilon}$$ is not informative, and the error gets amplified in $$\hat{\bf x}$$.
 
 Therefore, a heuristic is to choose a network output that is a combination of $${\bf x}$$- and $${\boldsymbol \epsilon}$$-prediction, which applies to the $${\bf v}$$-prediction and the flow matching vector field $${\bf u} = {\bf x} - {\bf \epsilon}$$.
