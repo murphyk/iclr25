@@ -156,6 +156,8 @@ An interesting special case is the standard flow matching interpolation ($\alpha
 </div>
 
 Check it out for yourself below: DDIM always gives the same samples no matter the schedule, which is also the same as flow matching.
+Beware to that generating the same samples does not mean following the same path. The ODE and DDIM paths do bend as you change the slider but note how start and end-points never change.
+For the Euler sampler the schedule makes a true difference: Both the paths and the data points that it ends at change.
 When adjusting the slider to the right we adjust $\alpha$ and $\sigma$ towards the Variance Preserving (VP) schedule.
 
 The ground truth line is the true ODE path while the DDIM and ODE lines show an approximation with just a few sampling steps.
