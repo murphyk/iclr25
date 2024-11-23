@@ -1,7 +1,7 @@
 ---
 layout: distill
 title: "Diffusion Models and Gaussian Flow Matching: Two Sides of the Same Coin"
-description: "Flow matching and diffusion models are two popular frameworks in generative modeling. Despite seeming similar, there is general confusion in the community about their exact connection. In this post we aim to clear up this confusion and show that <i>diffusion model and Gaussian flow matching are essentially the same</i>: Different model specifications lead to different noise schedules and loss weighting but correspond to the same generative model. That's great news, it means that you can use the two frameworks interchangeably."
+description: "Flow matching and diffusion models are two popular frameworks in generative modeling. Despite seeming similar, there is general confusion in the community about their exact connection. In this post we aim to clear up this confusion and show that <i>diffusion model and Gaussian flow matching are the same</i>. However, the different model specifications lead to different noise schedules and loss weighting terms, as we explain."
 date: 2025-11-12
 future: true
 htmlwidgets: true
@@ -63,20 +63,14 @@ _styles: >
 
 {% include figure.html path="assets/img/2025-04-28-distill-example/twotrees.jpg" class="img-fluid" %}
 
-
-Flow matching is gaining popularity recently, due to its simplicity in formulation and "straightness" in the sampling trajectories. A common question one hears nowadays is: 
-
-
-<!-- > Does this diffusion technique also work with Gaussian flow matching? -->
-<p align="center"><i>"Does this diffusion technique also work with flow matching?"</i></p>
+Flow matching is gaining popularity recently, due to the simplicity of its formulation and the  “straightness” of its induced sampling trajectories. This raises the commonly asked question:
 
 
-What exactly are the differences between these two approaches? As we will see, diffusion modelling and Gaussian flow matching are the same. So the answer to this question is "yes", unless the matching is not to a Gaussian.
+<p align="center"><i>"Which is better, diffusion or flow matching?"</i></p>
 
-To give an example, you may assume that flow matching sampling has to be deterministic. However, you have trained a general denoiser: stochastic or deterministic sampling, it's up to you!
+The purpose of this blog post is to explain that the two methods are equivalent (for the common special case that the source distribution used with flow matching corresponds to a Gaussian). We will show how to convert one formalism to another. This allows you to mix and match techniques. For example, after training a flow matching model, you can use either a stochastic or deterministic sampling method (in contrast to the common misunderstanding that flow matching is always deterministic). We will focus on  the most commonly used flow matching formalism <d-cite key="lipman2022flow"></d-cite>,
+which is closely related to  <d-cite key="liu2022flow,albergo2023stochastic"></d-cite>. Our purpose is not to recommend one approach over another. Instead our goal is to explain similarities and differences between the methods, and to explain the degrees of freedom one has when tuning each algorithm.
 
-
-In this blog post, we take the most commonly<d-footnote>We focus on Gaussian flow matching with the optimal transport flow path.</d-footnote> used flow matching case <d-cite key="lipman2022flow"></d-cite>, also very related to <d-cite key="liu2022flow,albergo2023stochastic"></d-cite>. Our purpose is not to downweigh the importance of either framework. In fact, both diffusion model and flow matching frameworks are important and derived from distinct theoretical perspectives. It is even more encouraging that they lead to the same algorithm in practice. The goal of this post is to make the practitioner feel comfortable to use the two frameworks interchangeably and understand the actual degrees of freedom we have when tuning the algorithm (no matter how we name it).
 
 
 ## Overview
